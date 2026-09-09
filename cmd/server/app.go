@@ -1,0 +1,53 @@
+package main
+
+import (
+	"errors"
+	"log/slog"
+
+	buldCfg "github.com/spider4216/GophProfile/internal/config"
+	"github.com/spider4216/GophProfile/internal/logger"
+	"github.com/spider4216/GophProfile/internal/server/config"
+)
+
+type app struct {
+	logger *slog.Logger
+	cfg    *config.Config
+}
+
+func newApp() *app {
+	return &app{}
+}
+
+func (a *app) Run() error {
+	_, err := buldCfg.NewBuilder(a).
+		Step((*app).initConfig).
+		Step((*app).initLogger).
+		Build()
+
+	return err
+}
+
+func (a *app) initConfig() error {
+	var cfg *config.Config
+
+	cfg, err := config.New()
+	if err != nil {
+		return err
+	}
+
+	if cfg.DbDsn == "" {
+		return errors.New("dsn didtn't passed")
+	}
+
+	a.cfg = cfg
+
+	return nil
+}
+
+func (a *app) initLogger() error {
+	logger := logger.Init(a.cfg.LogLvl)
+
+	a.logger = logger
+
+	return nil
+}
