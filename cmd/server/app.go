@@ -1,19 +1,22 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	buldCfg "github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
 	"github.com/spider4216/GophProfile/internal/repositories"
 	"github.com/spider4216/GophProfile/internal/server/config"
+	"github.com/spider4216/GophProfile/migrations"
 )
 
 type app struct {
 	logger *slog.Logger
 	cfg    *config.Config
-	repo   *repositories.Repository
+	repo   repositories.RepositoryInterface
 }
 
 func newApp() *app {
@@ -25,6 +28,7 @@ func (a *app) Run() error {
 		Step((*app).initConfig).
 		Step((*app).initLogger).
 		Step((*app).initRepo).
+		Step((*app).initMigrations).
 		Build()
 
 	return err
@@ -62,6 +66,30 @@ func (a *app) initRepo() error {
 	}
 
 	a.repo = repo
+
+	return nil
+}
+
+func (a *app) initMigrations() error {
+	a.logger.Debug("Up migrations")
+
+	repo, ok := a.repo.(*repositories.Repository)
+
+	if !ok {
+		return fmt.Errorf("cannot cast to pgx repository type in init migration")
+	}
+
+	src, ok := repo.Source().(*sql.DB)
+
+	if !ok {
+		return fmt.Errorf("cannot cast to sql.DB type in init migration")
+	}
+
+	if err := migrations.Run(src); err != nil {
+		return err
+	}
+
+	a.logger.Debug("Migration done")
 
 	return nil
 }

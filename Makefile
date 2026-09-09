@@ -9,3 +9,15 @@ run-srv:
 
 crt:
 	go run ./cmd/crt
+
+migration-gen:
+	migrate create -ext sql -dir ./migrations -seq $(name)
+
+migrate-up:
+	migrate -path ./migrations -database $(DSN) up $(ver)
+
+migrate-down:
+	migrate -path ./migrations -database $(DSN) down $(ver)
+
+migrate-force:
+	migrate -path ./migrations -database $(DSN) force $(ver)

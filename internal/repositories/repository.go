@@ -13,7 +13,7 @@ type Repository struct {
 	logger *slog.Logger
 }
 
-func NewRepository(dsn string, logger *slog.Logger) (*Repository, error) {
+func NewRepository(dsn string, logger *slog.Logger) (RepositoryInterface, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
