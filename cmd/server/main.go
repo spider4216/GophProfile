@@ -27,13 +27,14 @@ func main() {
 		log.Fatal("Cannot run app", err)
 	}
 
-	service := services.New(app.repo, app.logger)
+	service := services.New(app.repo, app.logger, app.queue)
 	middleware := middlewares.New(app.logger, app.cfg)
 	handler := handlers.New(app.cfg, app.logger, service)
 
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /health", middleware.WithLogging(http.HandlerFunc(handler.Health)))
+	mux.Handle("POST /api/v1/avatars", middleware.WithLogging(http.HandlerFunc(handler.UploadAvatar)))
 
 	srv := &http.Server{
 		Addr:         app.cfg.ServerAddress,

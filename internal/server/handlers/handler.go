@@ -25,7 +25,30 @@ func New(cfg *config.Config, logger *slog.Logger, service *services.Service) Han
 }
 
 func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// todo validate filesize
+
+	// todo field name to const
+	// file, header, err := r.FormFile("file")
+
+	// if err != nil {
+	// h.logger.Error("something wrong with file", "error", err)
+	// w.WriteHeader(http.StatusBadRequest)
+	// return
+	// }
+
+	// defer file.Close()
+
+	// fileName := header.Filename
+	// fileSize := header.Size
+	// mimetype := header.Header.Get("Content-Type")
 	// todo logic
+
+	if err := h.service.SendUploadEvent(ctx, "test_user_id"); err != nil {
+		h.logger.Error("cannot send upload event", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {

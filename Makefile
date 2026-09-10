@@ -3,9 +3,10 @@ APP_NAME=gophkeeper
 DSN?=postgres://postgres:postgres@localhost:5432/gophprofile
 LOG_LEVEL?=debug
 SERVER_HOST?=127.0.0.1:8080
+RABBIT_DSN?=amqp://guest:guest@localhost:5672/
 
 run-srv:
-	SERVER_ADDRESS=${SERVER_HOST} DB_DSN=$(DSN) LOG_LEVEL=${LOG_LEVEL} go run ./cmd/server
+	RABBIT_DSN=$(RABBIT_DSN) SERVER_ADDRESS=${SERVER_HOST} DB_DSN=$(DSN) LOG_LEVEL=${LOG_LEVEL} go run ./cmd/server
 
 crt:
 	go run ./cmd/crt

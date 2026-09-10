@@ -8,6 +8,7 @@ import (
 
 	buldCfg "github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
+	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
 	"github.com/spider4216/GophProfile/internal/server/config"
 	"github.com/spider4216/GophProfile/migrations"
@@ -17,6 +18,7 @@ type app struct {
 	logger *slog.Logger
 	cfg    *config.Config
 	repo   repositories.RepositoryInterface
+	queue  *queue.Queue
 }
 
 func newApp() *app {
@@ -29,6 +31,7 @@ func (a *app) Run() error {
 		Step((*app).initLogger).
 		Step((*app).initRepo).
 		Step((*app).initMigrations).
+		Step((*app).initQueue).
 		Build()
 
 	return err
@@ -90,6 +93,26 @@ func (a *app) initMigrations() error {
 	}
 
 	a.logger.Debug("Migration done")
+
+	return nil
+}
+
+func (a *app) initQueue() error {
+	q, err := queue.NewQueue(a.cfg.RabbitDSN, a.logger)
+
+	if err != nil {
+		return fmt.Errorf("cannot init queue: %w", err)
+	}
+
+	// Декларируем очереди
+	// todo проверить единожды ли декларируются
+	err = q.DeclareQueues()
+
+	if err != nil {
+		return fmt.Errorf("cannot declare queue: %w", err)
+	}
+
+	a.queue = q
 
 	return nil
 }
