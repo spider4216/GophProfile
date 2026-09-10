@@ -8,6 +8,9 @@ RABBIT_DSN?=amqp://guest:guest@localhost:5672/
 run-srv:
 	RABBIT_DSN=$(RABBIT_DSN) SERVER_ADDRESS=${SERVER_HOST} DB_DSN=$(DSN) LOG_LEVEL=${LOG_LEVEL} go run ./cmd/server
 
+run-worker:
+	RABBIT_DSN=$(RABBIT_DSN) LOG_LEVEL=${LOG_LEVEL} go run ./cmd/worker
+
 crt:
 	go run ./cmd/crt
 

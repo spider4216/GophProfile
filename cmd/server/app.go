@@ -105,7 +105,6 @@ func (a *app) initQueue() error {
 	}
 
 	// Декларируем очереди
-	// todo проверить единожды ли декларируются
 	err = q.DeclareQueues()
 
 	if err != nil {

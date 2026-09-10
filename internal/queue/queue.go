@@ -23,11 +23,14 @@ const (
 )
 
 type Queue struct {
-	conn         *amqp.Connection
-	logger       *slog.Logger
-	uploadQueue  *amqp.Queue
-	processQueue *amqp.Queue
-	deleteQueue  *amqp.Queue
+	conn            *amqp.Connection
+	logger          *slog.Logger
+	uploadQueue     *amqp.Queue
+	processQueue    *amqp.Queue
+	deleteQueue     *amqp.Queue
+	UploadConsumer  <-chan amqp.Delivery
+	DeleteConsumer  <-chan amqp.Delivery
+	ProcessConsumer <-chan amqp.Delivery
 }
 
 func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
@@ -70,6 +73,32 @@ func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent)
 			DeliveryMode: amqp.Persistent,    // сообщение будет сохранено на диск
 		},
 	)
+}
+
+func (q *Queue) DeclareConsumers() error {
+	uplC, err := q.declareConsumer(uploadQueueName)
+
+	if err != nil {
+		return fmt.Errorf("cannot declare upload consumer: %w", err)
+	}
+
+	delC, err := q.declareConsumer(deleteQueueName)
+
+	if err != nil {
+		return fmt.Errorf("cannot declare delete consumer: %w", err)
+	}
+
+	proc, err := q.declareConsumer(processQueueName)
+
+	if err != nil {
+		return fmt.Errorf("cannot declare process consumer: %w", err)
+	}
+
+	q.UploadConsumer = uplC
+	q.DeleteConsumer = delC
+	q.ProcessConsumer = proc
+
+	return nil
 }
 
 func (q *Queue) DeclareQueues() error {
@@ -127,4 +156,22 @@ func (q *Queue) declareQueue(name queueName) (*amqp.Queue, error) {
 	}
 
 	return &myq, nil
+}
+
+func (q *Queue) declareConsumer(name queueName) (<-chan amqp.Delivery, error) {
+	ch, err := q.CreateCh()
+
+	if err != nil {
+		return nil, fmt.Errorf("cannot create channel while declare %s consumer: %w", name, err)
+	}
+
+	return ch.Consume(
+		name.String(),
+		name.String(),
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
 }
