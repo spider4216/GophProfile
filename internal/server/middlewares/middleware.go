@@ -4,16 +4,19 @@ import (
 	"log/slog"
 
 	"github.com/spider4216/GophProfile/internal/server/config"
+	"github.com/spider4216/GophProfile/internal/services"
 )
 
 type Middleware struct {
-	logger *slog.Logger
-	cfg    *config.Config
+	logger  *slog.Logger
+	cfg     *config.Config
+	service *services.Service
 }
 
-func New(logger *slog.Logger, cfg *config.Config) Middleware {
+func New(logger *slog.Logger, cfg *config.Config, service *services.Service) Middleware {
 	return Middleware{
-		logger: logger,
-		cfg:    cfg,
+		logger:  logger,
+		cfg:     cfg,
+		service: service,
 	}
 }
