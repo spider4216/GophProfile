@@ -17,8 +17,8 @@ type Config struct {
 	IdleTimeout   time.Duration `env:"IDLE_TIMEOUT" envDefault:"30s"`
 	PKPath        string        `env:"PK_PATH" envDefault:"certs/private.pem"` // Путь до приватного ключа для режимо HTTPS
 	CrtPath       string        `env:"CRT_PATH" envDefault:"certs/cert.pem"`   // Путь до сертификата для режимо HTTPS
-	// todo В общий конфиг
-	RabbitDSN string `env:"RABBIT_DSN"`
+	RabbitDSN     string        `env:"RABBIT_DSN"`
+	SupportImgExt []string      `env:"SUPPORT_IMG_EXT" envDefault:"image/jpeg,image/png,image/webp"`
 }
 
 func New() (*Config, error) {
