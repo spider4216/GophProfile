@@ -56,9 +56,17 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Debug("Data", "filename", fileName, "size", fileSize, "mimetype", mimetype)
+	ava, err := h.service.CreateAvatar(ctx, fileName, mimetype, fileSize)
 
-	if err := h.service.SendUploadEvent(ctx, "test_user_id"); err != nil {
+	if err != nil {
+		h.logger.Error("cannot create avatar", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Debug("Data", "filename", fileName, "size", fileSize, "mimetype", mimetype, "ID", ava.ID)
+
+	if err := h.service.SendUploadEvent(ctx, h.service.GetUserIdFromCtx(ctx), ava.ID, ava.S3Key); err != nil {
 		h.logger.Error("cannot send upload event", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

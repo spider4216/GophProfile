@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
-	"os"
 
+	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/worker/handlers"
 	"github.com/spider4216/GophProfile/internal/worker/services"
 )
@@ -26,18 +27,24 @@ func main() {
 
 	// todo gracefull shutdown
 
-	var err error
-
 	for {
 		select {
 		case d := <-app.queue.UploadConsumer:
 			app.logger.Debug("Consume upload...")
 
-			err = handler.UploadAvatar(ctx)
+			var event models.AvatarUploadEvent
 
-			if err == nil {
-				d.Ack(false)
+			if err := json.Unmarshal(d.Body, &event); err != nil {
+				app.logger.Error("Cannot unmarshall", "error", err)
+				break
 			}
+
+			if err := handler.UploadAvatar(ctx, event); err != nil {
+				app.logger.Error("Cannot upload avatar", "error", err)
+				break
+			}
+
+			d.Ack(false)
 		case d := <-app.queue.DeleteConsumer:
 			app.logger.Debug("Consume delete...")
 			d.Ack(false)
@@ -45,11 +52,5 @@ func main() {
 			app.logger.Debug("Consume process...")
 			d.Ack(false)
 		}
-
-		if err != nil {
-			app.logger.Error("something went wrong", "error", err)
-			os.Exit(1)
-		}
 	}
-
 }
