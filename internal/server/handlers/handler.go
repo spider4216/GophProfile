@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"path"
 	"slices"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/server/config"
 	"github.com/spider4216/GophProfile/internal/server/models"
 	"github.com/spider4216/GophProfile/internal/services"
@@ -56,7 +60,16 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ava, err := h.service.CreateAvatar(ctx, fileName, mimetype, fileSize)
+	uid := uuid.NewString()
+
+	// Сохраняем во временной tmp, поскольку в minio будет загружать потребитель
+	if err := h.service.CreateTmpFile(ctx, fileName, file, uid); err != nil {
+		h.logger.Error("cannot put file to tmp", "error", err)
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		return
+	}
+
+	ava, err := h.service.CreateAvatar(ctx, fileName, mimetype, fileSize, uid)
 
 	if err != nil {
 		h.logger.Error("cannot create avatar", "error", err)
@@ -69,6 +82,31 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	if err := h.service.SendUploadEvent(ctx, h.service.GetUserIdFromCtx(ctx), ava.ID, ava.S3Key); err != nil {
 		h.logger.Error("cannot send upload event", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	url := path.Join("https://", h.cfg.ServerAddress, "/api/v1/avatars/", ava.ID)
+
+	resp := models.UploadResp{
+		ID:        ava.ID,
+		UserID:    ava.UserID,
+		URL:       url,
+		Status:    enum.Uploading,
+		CreatedAt: time.Now(),
+	}
+
+	b, err := json.Marshal(resp)
+
+	if err != nil {
+		h.logger.Error("cannot marshal response", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+	if _, err := w.Write(b); err != nil {
+		h.logger.Error("failed to write response", "error", err)
 		return
 	}
 }

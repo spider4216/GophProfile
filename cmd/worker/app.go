@@ -7,13 +7,17 @@ import (
 	buldCfg "github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
 	"github.com/spider4216/GophProfile/internal/queue"
+	"github.com/spider4216/GophProfile/internal/repositories"
 	"github.com/spider4216/GophProfile/internal/worker/config"
+	"github.com/spider4216/GophProfile/internal/worker/minio"
 )
 
 type app struct {
-	logger *slog.Logger
-	cfg    *config.Config
-	queue  *queue.Queue
+	logger   *slog.Logger
+	cfg      *config.Config
+	queue    *queue.Queue
+	s3Client *minio.S3Client
+	repo     repositories.RepositoryInterface
 }
 
 func newApp() *app {
@@ -24,7 +28,9 @@ func (a *app) Run() error {
 	_, err := buldCfg.NewBuilder(a).
 		Step((*app).initConfig).
 		Step((*app).initLogger).
+		Step((*app).initRepo).
 		Step((*app).initQueue).
+		Step((*app).initMinio).
 		Build()
 
 	return err
@@ -79,6 +85,23 @@ func (a *app) initLogger() error {
 	logger := logger.Init(a.cfg.LogLvl)
 
 	a.logger = logger
+
+	return nil
+}
+
+func (a *app) initMinio() error {
+	a.s3Client = minio.NewS3Client(a.cfg)
+
+	return nil
+}
+
+func (a *app) initRepo() error {
+	repo, err := repositories.NewRepository(a.cfg.DbDSN, a.logger)
+	if err != nil {
+		return err
+	}
+
+	a.repo = repo
 
 	return nil
 }

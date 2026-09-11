@@ -14,5 +14,5 @@ type Avatar struct {
 	ProcessingStatus string
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
-	DeletedAt        time.Time
+	DeletedAt        *time.Time
 }

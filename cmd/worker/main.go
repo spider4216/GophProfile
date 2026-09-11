@@ -17,7 +17,7 @@ func main() {
 		log.Fatal("Cannot run app", err)
 	}
 
-	service := services.NewService(app.logger, app.queue)
+	service := services.NewService(app.logger, app.queue, app.repo, app.s3Client)
 	handler := handlers.NewHandler(app.logger, service)
 
 	// todo ctx with timeout
