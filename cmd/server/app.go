@@ -107,6 +107,9 @@ func (a *app) initQueue() error {
 	// Декларируем очереди
 	err = q.DeclareQueues()
 
+	// Декларируем routing keys и binds делаются на
+	// стороне workers
+
 	if err != nil {
 		return fmt.Errorf("cannot declare queue: %w", err)
 	}

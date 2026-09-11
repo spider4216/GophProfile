@@ -38,15 +38,22 @@ func (a *app) initQueue() error {
 	}
 
 	// Декларируем очереди
-	err = q.DeclareQueues()
-
-	if err != nil {
+	if err = q.DeclareQueues(); err != nil {
 		return fmt.Errorf("cannot declare queue: %w", err)
 	}
 
-	err = q.DeclareConsumers()
+	// Декларируем Exchange
+	if err := q.DeclareExchange(); err != nil {
+		return fmt.Errorf("cannot declare exchange: %w", err)
+	}
 
-	if err != nil {
+	// Делаем Binds Exchange с Queues
+	if err := q.QueuesBind(); err != nil {
+		return fmt.Errorf("cannot bind queues: %w", err)
+	}
+
+	// Декларируем консьюмеры
+	if err := q.DeclareConsumers(); err != nil {
 		return fmt.Errorf("cannot declare consumers: %w", err)
 	}
 

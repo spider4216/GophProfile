@@ -20,6 +20,7 @@ const (
 	uploadQueueName  queueName = "upload"
 	deleteQueueName  queueName = "delete"
 	processQueueName queueName = "process"
+	exchange         string    = "events"
 )
 
 type Queue struct {
@@ -63,7 +64,7 @@ func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent)
 
 	return ch.PublishWithContext(
 		ctx,
-		"",                 // exchange пока default
+		exchange,           // exchange пока default
 		q.uploadQueue.Name, // routingKey
 		false,
 		false,
@@ -97,6 +98,38 @@ func (q *Queue) DeclareConsumers() error {
 	q.UploadConsumer = uplC
 	q.DeleteConsumer = delC
 	q.ProcessConsumer = proc
+
+	return nil
+}
+
+func (q *Queue) DeclareExchange() error {
+	ch, err := q.CreateCh()
+
+	if err != nil {
+		return fmt.Errorf("cannot decalre excahnge events")
+	}
+
+	return ch.ExchangeDeclare(exchange, "direct", true, false, false, false, nil)
+}
+
+func (q *Queue) QueuesBind() error {
+	ch, err := q.CreateCh()
+
+	if err != nil {
+		return fmt.Errorf("cannot create ch in queue bind: %w", err)
+	}
+
+	if err := ch.QueueBind(uploadQueueName.String(), uploadQueueName.String(), exchange, false, nil); err != nil {
+		return fmt.Errorf("cannot bind upload key to exchage: %w", err)
+	}
+
+	if err := ch.QueueBind(deleteQueueName.String(), deleteQueueName.String(), exchange, false, nil); err != nil {
+		return fmt.Errorf("cannot bind delete key to exchage: %w", err)
+	}
+
+	if err := ch.QueueBind(processQueueName.String(), processQueueName.String(), exchange, false, nil); err != nil {
+		return fmt.Errorf("cannot bind process key to exchage: %w", err)
+	}
 
 	return nil
 }
