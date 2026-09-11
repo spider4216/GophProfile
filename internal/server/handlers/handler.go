@@ -45,8 +45,14 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	mimetype := header.Header.Get("Content-Type")
 
 	if !slices.Contains(h.cfg.SupportImgExt, mimetype) {
-		h.logger.Error("file is not valid", "provided", mimetype)
+		h.logger.Error("file format is not valid", "provided", mimetype)
 		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if fileSize > h.cfg.MaxImgSize {
+		h.logger.Error("file is too large", "provided", fileSize)
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
 		return
 	}
 

@@ -19,6 +19,7 @@ type Config struct {
 	CrtPath       string        `env:"CRT_PATH" envDefault:"certs/cert.pem"`   // Путь до сертификата для режимо HTTPS
 	RabbitDSN     string        `env:"RABBIT_DSN"`
 	SupportImgExt []string      `env:"SUPPORT_IMG_EXT" envDefault:"image/jpeg,image/png,image/webp"`
+	MaxImgSize    int64         `env:"MAX_ING_SIZE" envDefault:"10485760"`
 }
 
 func New() (*Config, error) {
