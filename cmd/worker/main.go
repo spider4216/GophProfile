@@ -18,7 +18,7 @@ func main() {
 	}
 
 	service := services.NewService(app.logger, app.queue, app.repo, app.s3Client)
-	handler := handlers.NewHandler(app.logger, service)
+	handler := handlers.NewHandler(app.logger, service, app.cfg)
 
 	// todo ctx with timeout
 	ctx := context.Background()
@@ -50,6 +50,19 @@ func main() {
 			d.Ack(false)
 		case d := <-app.queue.ProcessConsumer:
 			app.logger.Debug("Consume process...")
+
+			var event models.AvatarProcessEvent
+
+			if err := json.Unmarshal(d.Body, &event); err != nil {
+				app.logger.Error("Cannot unmarshall", "error", err)
+				break
+			}
+
+			if err := handler.ProcessAvatar(ctx, event); err != nil {
+				app.logger.Error("Cannot process avatar", "error", err)
+				break
+			}
+
 			d.Ack(false)
 		}
 	}

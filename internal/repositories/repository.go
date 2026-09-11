@@ -91,3 +91,15 @@ func (repo *Repository) UpdateAvatarUplStatus(ctx context.Context, ID string, st
 
 	return nil
 }
+
+func (repo *Repository) UpdateThumbnails(ctx context.Context, ID string, thumbnails []byte) error {
+	sql := "UPDATE avatars SET thumbnail_s3_keys=$1 WHERE id=$2"
+
+	_, err := repo.con.ExecContext(ctx, sql, thumbnails, ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

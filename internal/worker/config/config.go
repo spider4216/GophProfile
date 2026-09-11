@@ -6,13 +6,14 @@ import (
 
 type Config struct {
 	// todo Dsn to upper
-	LogLvl     string `env:"LOG_LEVEL" envDefault:"debug"` // Уровень логирования
-	RabbitDSN  string `env:"RABBIT_DSN"`
-	MinioHost  string `env:"MINIO_HOST"`
-	MinioUser  string `env:"MINIO_ROOT_USER"`
-	MinioPass  string `env:"MINIO_ROOT_PASSWORD"`
-	DbDSN      string `env:"DB_DSN"` // Connection string для БД
-	BucketName string `env:"BUCKET_NAME" envDefault:"avatars"`
+	LogLvl         string `env:"LOG_LEVEL" envDefault:"debug"` // Уровень логирования
+	RabbitDSN      string `env:"RABBIT_DSN"`
+	MinioHost      string `env:"MINIO_HOST"`
+	MinioUser      string `env:"MINIO_ROOT_USER"`
+	MinioPass      string `env:"MINIO_ROOT_PASSWORD"`
+	DbDSN          string `env:"DB_DSN"` // Connection string для БД
+	BucketName     string `env:"BUCKET_NAME" envDefault:"avatars"`
+	QualityProcess int    `env:"QUALITY_PROCESS" envDefault"90"`
 }
 
 func New() (*Config, error) {

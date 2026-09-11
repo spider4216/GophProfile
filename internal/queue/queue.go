@@ -76,6 +76,33 @@ func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent)
 	)
 }
 
+// todo general func send event
+func (q *Queue) SendProcessEvent(ctx context.Context, e models.AvatarProcessEvent) error {
+	b, err := json.Marshal(e)
+
+	if err != nil {
+		return fmt.Errorf("cannot marshal process event payload: %w", err)
+	}
+
+	ch, err := q.CreateCh()
+
+	if err != nil {
+		return fmt.Errorf("cannot create channel for process publish: %w", err)
+	}
+
+	return ch.PublishWithContext(
+		ctx,
+		exchange,            // exchange пока default
+		q.processQueue.Name, // routingKey
+		false,
+		false,
+		amqp.Publishing{
+			Body:         b,               // тело сообщения
+			DeliveryMode: amqp.Persistent, // сообщение будет сохранено на диск
+		},
+	)
+}
+
 func (q *Queue) DeclareConsumers() error {
 	uplC, err := q.declareConsumer(uploadQueueName)
 

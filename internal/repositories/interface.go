@@ -13,4 +13,5 @@ type RepositoryInterface interface {
 	CreateAvatar(ctx context.Context, ava models.Avatar) (string, error)
 	GetAvatarByID(ctx context.Context, ID string) (*models.Avatar, error)
 	UpdateAvatarUplStatus(ctx context.Context, ID string, status enum.UploadStatus) error
+	UpdateThumbnails(ctx context.Context, ID string, thumbnails []byte) error
 }
