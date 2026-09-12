@@ -36,6 +36,7 @@ func main() {
 	mux.Handle("GET /health", middleware.WithLogging(http.HandlerFunc(handler.Health)))
 	mux.Handle("POST /api/v1/avatars", middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.UploadAvatar))))
 	mux.Handle("GET /api/v1/avatars/{avatar_id}", middleware.WithLogging(http.HandlerFunc(handler.GetAvatar)))
+	mux.Handle("GET /api/v1/users/{user_id}/avatar", middleware.WithLogging(http.HandlerFunc(handler.GetUserAvatar)))
 
 	srv := &http.Server{
 		Addr:         app.cfg.ServerAddress,

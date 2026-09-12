@@ -16,4 +16,5 @@ type RepositoryInterface interface {
 	UpdateAvatarProcStatus(ctx context.Context, ID string, status enum.ProcStatus) error
 	UpdateThumbnails(ctx context.Context, ID string, thumbnails []byte) error
 	CommitProcess(ctx context.Context, avatarID string, thumbBytes []byte) error
+	GetLatestUserAvatar(ctx context.Context, userID string) (*models.Avatar, error)
 }

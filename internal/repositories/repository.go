@@ -145,3 +145,36 @@ func (repo *Repository) CommitProcess(ctx context.Context, avatarID string, thum
 
 	return nil
 }
+
+func (repo *Repository) GetLatestUserAvatar(ctx context.Context, userID string) (*models.Avatar, error) {
+	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE user_id=$1 and deleted_at IS NULL ORDER BY created_at DESC LIMIT 1"
+
+	var ava models.Avatar
+
+	var thumbnailS3Keys []byte
+
+	err := repo.con.QueryRowContext(ctx, sql, userID).Scan(
+		&ava.ID,
+		&ava.UserID,
+		&ava.FileName,
+		&ava.MimeType,
+		&ava.SizeBytes,
+		&ava.S3Key,
+		&thumbnailS3Keys,
+		&ava.UploadStatus,
+		&ava.ProcessingStatus,
+		&ava.CreatedAt,
+		&ava.UpdatedAt,
+		&ava.DeletedAt,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("cannot scan: %w", err)
+	}
+
+	if err := json.Unmarshal(thumbnailS3Keys, &ava.ThumbnailS3Keys); err != nil {
+		return nil, fmt.Errorf("cannot unmarshal avatar: %w", err)
+	}
+
+	return &ava, nil
+}

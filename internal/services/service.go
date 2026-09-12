@@ -164,3 +164,7 @@ func (s *Service) PrepareNotFoundResp() ([]byte, error) {
 
 	return json.Marshal(resp)
 }
+
+func (s *Service) GetLatestActiveUserAvatar(ctx context.Context, userID string) (*models.Avatar, error) {
+	return s.repo.GetLatestUserAvatar(ctx, userID)
+}

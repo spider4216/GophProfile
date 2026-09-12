@@ -187,6 +187,8 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "max-age="+strconv.Itoa(h.cfg.CacheTTL))
 	w.Header().Set("ETag", h.service.HashBinary(b))
 
+	w.WriteHeader(http.StatusOK)
+
 	if _, err := w.Write(b); err != nil {
 		h.logger.Error("failed to write response", "error", err)
 		return
@@ -198,7 +200,54 @@ func (h *Handler) GetMetaAvatars(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
-	// todo logic
+	ctx := r.Context()
+
+	size := r.URL.Query().Get("size")
+
+	userID := r.PathValue("user_id")
+
+	ava, err := h.service.GetLatestActiveUserAvatar(ctx, userID)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			h.logger.Error("avatar not found", "error", err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		h.logger.Error("cannot get avatar", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Получаем аватар или thumbnail
+	b, code, err := h.service.GetComplexBinaryAva(ctx, size, ava)
+
+	if err != nil {
+		// Если аватара нет, то возвращаем ответ
+		if code == http.StatusNotFound {
+			h.logger.Error("avatar binary not found", "error", err)
+			w.WriteHeader(code)
+			return
+		}
+
+		// Иначе возаращаем внутреннюю ошибку
+		h.logger.Error("getting avatar binary error", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", ava.MimeType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, ava.FileName))
+	w.Header().Set("Cache-Control", "max-age="+strconv.Itoa(h.cfg.CacheTTL))
+	w.Header().Set("ETag", h.service.HashBinary(b))
+
+	w.WriteHeader(http.StatusOK)
+
+	if _, err := w.Write(b); err != nil {
+		h.logger.Error("failed to write response", "error", err)
+		return
+	}
 }
 
 func (h *Handler) DeleteUserAvatar(w http.ResponseWriter, r *http.Request) {
