@@ -3,16 +3,21 @@ package services
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
+	srvModel "github.com/spider4216/GophProfile/internal/server/models"
 	"github.com/spider4216/GophProfile/internal/worker/minio"
 )
 
@@ -94,6 +99,40 @@ func (s *Service) SendUploadEvent(ctx context.Context, userID string, avaID stri
 	return s.queue.SendUploadEvent(ctx, e)
 }
 
+func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *models.Avatar) ([]byte, int, error) {
+	if size == "" {
+		if ava.UploadStatus != enum.Uploaded.String() {
+			s.logger.Error("avatar uploading... try again latter", "avaid", ava.ID)
+			return nil, http.StatusServiceUnavailable, errors.New("avatar uploading... try again latter")
+		}
+
+		b, err := s.GetBinaryAva(ctx, ava.S3Key)
+
+		if err != nil {
+			s.logger.Error("cannot download original avatar", "error", err)
+			return nil, http.StatusNotFound, fmt.Errorf("cannot download original avatar: %w", err)
+		}
+
+		return b, 0, nil
+	}
+
+	if ava.ProcessingStatus != enum.ProcDone.String() {
+		s.logger.Error("avatar thumbnails processing... try again latter", "avaid", ava.ID)
+
+		return nil, http.StatusServiceUnavailable, errors.New("avatar thumbnails processing... try again latter")
+	}
+
+	b, err := s.GetBinaryThumbnail(ctx, ava, size)
+
+	if err != nil {
+		s.logger.Error("cannot download thumbnail avatar", "error", err)
+
+		return nil, http.StatusNotFound, fmt.Errorf("cannot download thumbnail avatar: %w", err)
+	}
+
+	return b, 0, nil
+}
+
 func (s *Service) GetBinaryAva(ctx context.Context, s3key string) ([]byte, error) {
 	return s.s3Cli.Download(ctx, s3key)
 }
@@ -116,4 +155,12 @@ func (s *Service) HashBinary(data []byte) string {
 	hash := sha256.Sum256(data)
 
 	return fmt.Sprintf("%x", hash)
+}
+
+func (s *Service) PrepareNotFoundResp() ([]byte, error) {
+	resp := srvModel.GetNoAvaResp{
+		Err: "Avatar not found",
+	}
+
+	return json.Marshal(resp)
 }

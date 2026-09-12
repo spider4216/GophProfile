@@ -126,7 +126,22 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			h.logger.Error("avatar not found", "error", err)
+
+			b, err := h.service.PrepareNotFoundResp()
+
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				h.logger.Error("cannot marshal 404 resp")
+				return
+			}
+
 			w.WriteHeader(http.StatusNotFound)
+
+			if _, err := w.Write(b); err != nil {
+				h.logger.Error("failed to write response", "error", err)
+				return
+			}
+
 			return
 		}
 
@@ -137,34 +152,34 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 
 	var b []byte
 
-	if size == "" {
-		if ava.UploadStatus != enum.Uploaded.String() {
-			h.logger.Error("avatar uploading... try again latter", "error", err)
-			w.WriteHeader(http.StatusServiceUnavailable)
+	// Получаем аватар или thumbnail
+	b, code, err := h.service.GetComplexBinaryAva(ctx, size, ava)
+
+	if err != nil {
+		// Если аватара нет, то возвращаем ответ с телом
+		if code == http.StatusNotFound {
+			b, err := h.service.PrepareNotFoundResp()
+
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				h.logger.Error("cannot marshal 404 resp")
+				return
+			}
+
+			w.WriteHeader(code)
+
+			if _, err := w.Write(b); err != nil {
+				h.logger.Error("failed to write response", "error", err)
+				return
+			}
+
 			return
 		}
 
-		b, err = h.service.GetBinaryAva(ctx, ava.S3Key)
-
-		if err != nil {
-			h.logger.Error("cannot download original avatar", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	} else {
-		if ava.ProcessingStatus != enum.ProcDone.String() {
-			h.logger.Error("avatar thumbnails processing... try again latter", "error", err)
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-
-		b, err = h.service.GetBinaryThumbnail(ctx, ava, size)
-
-		if err != nil {
-			h.logger.Error("cannot download thumbnail avatar", "error", err)
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
+		// Иначе возаращаем внутреннюю ошибку без тела
+		h.logger.Error("getting avatar error", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", ava.MimeType)
