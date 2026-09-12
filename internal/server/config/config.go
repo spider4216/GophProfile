@@ -20,6 +20,12 @@ type Config struct {
 	RabbitDSN     string        `env:"RABBIT_DSN"`
 	SupportImgExt []string      `env:"SUPPORT_IMG_EXT" envDefault:"image/jpeg,image/png,image/webp"`
 	MaxImgSize    int64         `env:"MAX_ING_SIZE" envDefault:"10485760"`
+	CacheTTL      int           `env:"CACHE_TTL" envDefault"86400"`
+	// todo minio to general cfg
+	MinioHost  string `env:"MINIO_HOST"`
+	MinioUser  string `env:"MINIO_ROOT_USER"`
+	MinioPass  string `env:"MINIO_ROOT_PASSWORD"`
+	BucketName string `env:"BUCKET_NAME" envDefault:"avatars"`
 }
 
 func New() (*Config, error) {

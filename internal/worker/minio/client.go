@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/spider4216/GophProfile/internal/worker/config"
 )
 
 const (
@@ -23,12 +22,12 @@ type S3Client struct {
 	bucketName string
 }
 
-func NewS3Client(cfg *config.Config) *S3Client {
+func NewS3Client(login string, pass string, host string, bucket string) *S3Client {
 	s3Cfg := &aws.Config{
 		Region:           aws.String(region),
-		Endpoint:         aws.String(cfg.MinioHost),
+		Endpoint:         aws.String(host),
 		S3ForcePathStyle: aws.Bool(true),
-		Credentials:      credentials.NewStaticCredentials(cfg.MinioUser, cfg.MinioPass, ""),
+		Credentials:      credentials.NewStaticCredentials(login, pass, ""),
 		DisableSSL:       aws.Bool(!useSSL),
 	}
 
@@ -37,7 +36,7 @@ func NewS3Client(cfg *config.Config) *S3Client {
 
 	return &S3Client{
 		cli:        client,
-		bucketName: cfg.BucketName,
+		bucketName: bucket,
 	}
 }
 

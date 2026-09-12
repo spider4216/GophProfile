@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,19 +13,23 @@ import (
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
+	"github.com/spider4216/GophProfile/internal/worker/minio"
 )
 
+// todo подумать о том чтобы объединить сервисы сервера и воркера в один
 type Service struct {
 	repo   repositories.RepositoryInterface
 	logger *slog.Logger
 	queue  *queue.Queue
+	s3Cli  *minio.S3Client
 }
 
-func New(repo repositories.RepositoryInterface, logger *slog.Logger, queue *queue.Queue) *Service {
+func New(repo repositories.RepositoryInterface, logger *slog.Logger, queue *queue.Queue, s3Cli *minio.S3Client) *Service {
 	return &Service{
 		repo:   repo,
 		logger: logger,
 		queue:  queue,
+		s3Cli:  s3Cli,
 	}
 }
 
@@ -87,4 +92,28 @@ func (s *Service) SendUploadEvent(ctx context.Context, userID string, avaID stri
 	}
 
 	return s.queue.SendUploadEvent(ctx, e)
+}
+
+func (s *Service) GetBinaryAva(ctx context.Context, s3key string) ([]byte, error) {
+	return s.s3Cli.Download(ctx, s3key)
+}
+
+func (s *Service) GetBinaryThumbnail(ctx context.Context, ava *models.Avatar, size string) ([]byte, error) {
+	s3Key, ok := ava.ThumbnailS3Keys[size]
+
+	if !ok {
+		return nil, fmt.Errorf("cannot fine s3key thumbnail by size: %s", size)
+	}
+
+	return s.s3Cli.Download(ctx, s3Key)
+}
+
+func (s *Service) GetAvatarByID(ctx context.Context, ID string) (*models.Avatar, error) {
+	return s.repo.GetAvatarByID(ctx, ID)
+}
+
+func (s *Service) HashBinary(data []byte) string {
+	hash := sha256.Sum256(data)
+
+	return fmt.Sprintf("%x", hash)
 }

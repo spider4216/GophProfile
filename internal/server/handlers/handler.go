@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"path"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,7 +35,6 @@ func New(cfg *config.Config, logger *slog.Logger, service *services.Service) Han
 
 func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	// todo validate filesize
 
 	// todo field name to const
 	file, header, err := r.FormFile("file")
@@ -111,15 +114,75 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
-	// todo logic
+func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	id := r.PathValue("avatar_id")
+
+	size := r.URL.Query().Get("size")
+
+	ava, err := h.service.GetAvatarByID(ctx, id)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			h.logger.Error("avatar not found", "error", err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		h.logger.Error("cannot get avatar", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var b []byte
+
+	if size == "" {
+		if ava.UploadStatus != enum.Uploaded.String() {
+			h.logger.Error("avatar uploading... try again latter", "error", err)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
+		b, err = h.service.GetBinaryAva(ctx, ava.S3Key)
+
+		if err != nil {
+			h.logger.Error("cannot download original avatar", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if ava.ProcessingStatus != enum.ProcDone.String() {
+			h.logger.Error("avatar thumbnails processing... try again latter", "error", err)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
+		b, err = h.service.GetBinaryThumbnail(ctx, ava, size)
+
+		if err != nil {
+			h.logger.Error("cannot download thumbnail avatar", "error", err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", ava.MimeType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, ava.FileName))
+	w.Header().Set("Cache-Control", "max-age="+strconv.Itoa(h.cfg.CacheTTL))
+	w.Header().Set("ETag", h.service.HashBinary(b))
+
+	if _, err := w.Write(b); err != nil {
+		h.logger.Error("failed to write response", "error", err)
+		return
+	}
 }
 
 func (h *Handler) GetMetaAvatars(w http.ResponseWriter, r *http.Request) {
 	// todo logic
 }
 
-func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	// todo logic
 }
 

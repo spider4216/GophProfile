@@ -27,7 +27,7 @@ func main() {
 		log.Fatal("Cannot run app", err)
 	}
 
-	service := services.New(app.repo, app.logger, app.queue)
+	service := services.New(app.repo, app.logger, app.queue, app.s3Client)
 	middleware := middlewares.New(app.logger, app.cfg, service)
 	handler := handlers.New(app.cfg, app.logger, service)
 
@@ -35,6 +35,7 @@ func main() {
 
 	mux.Handle("GET /health", middleware.WithLogging(http.HandlerFunc(handler.Health)))
 	mux.Handle("POST /api/v1/avatars", middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.UploadAvatar))))
+	mux.Handle("GET /api/v1/avatars/{avatar_id}", middleware.WithLogging(http.HandlerFunc(handler.GetAvatar)))
 
 	srv := &http.Server{
 		Addr:         app.cfg.ServerAddress,

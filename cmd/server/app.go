@@ -11,14 +11,16 @@ import (
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
 	"github.com/spider4216/GophProfile/internal/server/config"
+	"github.com/spider4216/GophProfile/internal/worker/minio"
 	"github.com/spider4216/GophProfile/migrations"
 )
 
 type app struct {
-	logger *slog.Logger
-	cfg    *config.Config
-	repo   repositories.RepositoryInterface
-	queue  *queue.Queue
+	logger   *slog.Logger
+	cfg      *config.Config
+	repo     repositories.RepositoryInterface
+	s3Client *minio.S3Client
+	queue    *queue.Queue
 }
 
 func newApp() *app {
@@ -32,6 +34,7 @@ func (a *app) Run() error {
 		Step((*app).initRepo).
 		Step((*app).initMigrations).
 		Step((*app).initQueue).
+		Step((*app).initMinio).
 		Build()
 
 	return err
@@ -115,6 +118,12 @@ func (a *app) initQueue() error {
 	}
 
 	a.queue = q
+
+	return nil
+}
+
+func (a *app) initMinio() error {
+	a.s3Client = minio.NewS3Client(a.cfg.MinioUser, a.cfg.MinioPass, a.cfg.MinioHost, a.cfg.BucketName)
 
 	return nil
 }
