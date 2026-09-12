@@ -195,8 +195,39 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) GetMetaAvatars(w http.ResponseWriter, r *http.Request) {
-	// todo logic
+func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	id := r.PathValue("avatar_id")
+
+	ava, err := h.service.GetAvatarByID(ctx, id)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			h.logger.Error("avatar not found", "error", err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		h.logger.Error("cannot get avatar", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	resp := h.mapMetaResp(ava, h.cfg.ServerAddress)
+
+	b, err := json.Marshal(resp)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.logger.Error("cannot marshal")
+		return
+	}
+
+	if _, err := w.Write(b); err != nil {
+		h.logger.Error("failed to write response", "error", err)
+		return
+	}
 }
 
 func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {

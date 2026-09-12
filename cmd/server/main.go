@@ -37,6 +37,7 @@ func main() {
 	mux.Handle("POST /api/v1/avatars", middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.UploadAvatar))))
 	mux.Handle("GET /api/v1/avatars/{avatar_id}", middleware.WithLogging(http.HandlerFunc(handler.GetAvatar)))
 	mux.Handle("GET /api/v1/users/{user_id}/avatar", middleware.WithLogging(http.HandlerFunc(handler.GetUserAvatar)))
+	mux.Handle("GET /api/v1/avatars/{avatar_id}/metadata", middleware.WithLogging(http.HandlerFunc(handler.GetMetaAvatar)))
 
 	srv := &http.Server{
 		Addr:         app.cfg.ServerAddress,
