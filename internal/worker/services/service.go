@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/disintegration/imaging"
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ import (
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
 	"github.com/spider4216/GophProfile/internal/worker/minio"
+	"golang.org/x/sync/errgroup"
 )
 
 type Service struct {
@@ -93,49 +95,61 @@ func (s *Service) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent
 	}
 
 	thumpnails := make(map[string]string)
+	var mu sync.Mutex
+
+	var g errgroup.Group
 
 	// Перебрать все ops
-	// todo errgroup
 	for _, v := range e.Operations {
 		var w, h int
 
-		if v == enum.Size100 {
+		// Определяем размер из события
+		switch v {
+		case enum.Size100:
 			w, h = 100, 100
-		}
-
-		if v == enum.Size300 {
+		case enum.Size300:
 			w, h = 300, 300
+		default:
+			s.logger.Warn("no any size for process")
+			continue
 		}
 
-		// Для каждого сделать кроп
-		result := imaging.Fill(
-			img,
-			w,
-			h,
-			imaging.Center,
-			imaging.Lanczos,
-		)
+		// Изолируем
+		cv := v
+		cw, ch := w, h
 
-		var buf bytes.Buffer
+		// Распаралеливаем обработку и загрузку
+		g.Go(func() error {
+			s.logger.Debug("process and upload avatar", "id", ava.ID, "size", v)
+			// Для каждого сделать rsize и кроп
+			result := imaging.Fill(img, cw, ch, imaging.Center, imaging.Lanczos)
 
-		if err := jpeg.Encode(&buf, result, &jpeg.Options{
-			Quality: quality,
-		}); err != nil {
-			return fmt.Errorf("cannot encode avatar: %w", err)
-		}
+			var buf bytes.Buffer
 
-		// Каждый кроп загрузить в minio
-		key := uuid.NewString()
-		// todo преобразовать во все форматы jpg, webp, png, пока буду использовать один формат
-		if err := s.s3Cli.Upload(ctx, key, bytes.NewReader(buf.Bytes()), ava.MimeType); err != nil {
-			return fmt.Errorf("cannot upload to minio: %w", err)
-		}
+			if err := jpeg.Encode(&buf, result, &jpeg.Options{
+				Quality: quality,
+			}); err != nil {
+				return fmt.Errorf("cannot encode avatar: %w", err)
+			}
 
-		// Кропы накопить и в конечном итоге сохранить в бд в таблицу avatars
-		thumpnails[v.String()] = key
+			// Каждый кроп загрузить в minio
+			key := uuid.NewString()
+			if err := s.s3Cli.Upload(ctx, key, bytes.NewReader(buf.Bytes()), ava.MimeType); err != nil {
+				return fmt.Errorf("cannot upload to minio: %w", err)
+			}
+
+			// Кропы накопить и в конечном итоге сохранить в бд в таблицу avatars
+			mu.Lock()
+			thumpnails[cv.String()] = key
+			mu.Unlock()
+
+			return nil
+		})
 	}
 
-	// todo транзакция
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("cannot process and upload thumbnails: %w", err)
+	}
 
 	// Сохранить thumbnails в БД
 	thumbBytes, err := json.Marshal(thumpnails)
@@ -144,13 +158,9 @@ func (s *Service) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent
 		return fmt.Errorf("cannot marshal thumbnails: %w", err)
 	}
 
-	if err := s.repo.UpdateThumbnails(ctx, e.AvatarID, thumbBytes); err != nil {
-		return fmt.Errorf("cannot update avatar for thumbnails: %w", err)
-	}
-
-	// Изменить статус
-	if err := s.repo.UpdateAvatarUplStatus(ctx, e.AvatarID, enum.Uploaded); err != nil {
-		return fmt.Errorf("cannot update status on avatar: %w", err)
+	// Обновляем статус и сохраняем thumbnails в БД в транзакции
+	if err := s.repo.CommitProcess(ctx, e.AvatarID, thumbBytes); err != nil {
+		return fmt.Errorf("cannot commit changes in process avatar for thumbnails: %w", err)
 	}
 
 	return nil

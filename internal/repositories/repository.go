@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -99,6 +100,47 @@ func (repo *Repository) UpdateThumbnails(ctx context.Context, ID string, thumbna
 
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// todo можно сделать один sql для этой функции и UpdateAvatarUplStatus
+func (repo *Repository) UpdateAvatarProcStatus(ctx context.Context, ID string, status enum.ProcStatus) error {
+	sql := "UPDATE avatars SET processing_status=$1 WHERE id=$2"
+
+	_, err := repo.con.ExecContext(ctx, sql, status, ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) CommitProcess(ctx context.Context, avatarID string, thumbBytes []byte) error {
+	tx, err := repo.con.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+
+	defer func() {
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			repo.logger.Warn("cannot rollback in apply sync", "error", err)
+		}
+	}()
+
+	if err := repo.UpdateThumbnails(ctx, avatarID, thumbBytes); err != nil {
+		return fmt.Errorf("cannot update avatar for thumbnails: %w", err)
+	}
+
+	// Изменить статус
+	if err := repo.UpdateAvatarProcStatus(ctx, avatarID, enum.ProcDone); err != nil {
+		return fmt.Errorf("cannot update status on avatar: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction in commit process error: %w", err)
 	}
 
 	return nil
