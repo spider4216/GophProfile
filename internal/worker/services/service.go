@@ -15,10 +15,10 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/google/uuid"
 	"github.com/spider4216/GophProfile/internal/enum"
+	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
-	"github.com/spider4216/GophProfile/internal/worker/minio"
 	"golang.org/x/sync/errgroup"
 )
 

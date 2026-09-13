@@ -14,11 +14,11 @@ import (
 	"strings"
 
 	"github.com/spider4216/GophProfile/internal/enum"
+	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
 	srvModel "github.com/spider4216/GophProfile/internal/server/models"
-	"github.com/spider4216/GophProfile/internal/worker/minio"
 )
 
 // todo подумать о том чтобы объединить сервисы сервера и воркера в один

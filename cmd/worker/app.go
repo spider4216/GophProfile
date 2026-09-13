@@ -6,9 +6,9 @@ import (
 
 	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
+	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
-	"github.com/spider4216/GophProfile/internal/worker/minio"
 )
 
 type app struct {
