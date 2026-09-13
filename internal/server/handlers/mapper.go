@@ -20,7 +20,7 @@ func (h *Handler) mapMetasResp(avas []genModel.Avatar, host string) []models.Get
 func (h *Handler) mapMetaResp(ava *genModel.Avatar, host string) *models.GetMetaResp {
 	var thumbnails []models.Thumbnail
 
-	for k, _ := range ava.ThumbnailS3Keys {
+	for k := range ava.ThumbnailS3Keys {
 		url := path.Join("https://", host, "/api/v1/avatars/", ava.ID)
 		url += "?size=" + k
 

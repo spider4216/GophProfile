@@ -101,17 +101,14 @@ func (a *app) initMigrations() error {
 
 func (a *app) initQueue() error {
 	q, err := queue.NewQueue(a.cfg.RabbitDSN, a.logger)
-
 	if err != nil {
 		return fmt.Errorf("cannot init queue: %w", err)
 	}
 
 	// Декларируем очереди
 	err = q.DeclareQueues()
-
 	// Декларируем routing keys и binds делаются на
 	// стороне workers
-
 	if err != nil {
 		return fmt.Errorf("cannot declare queue: %w", err)
 	}

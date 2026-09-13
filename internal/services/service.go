@@ -52,7 +52,6 @@ func (s *Service) CreateAvatar(ctx context.Context, fname string, mtype string, 
 	}
 
 	id, err := s.repo.CreateAvatar(ctx, ava)
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot create avatar: %w", err)
 	}
@@ -69,7 +68,6 @@ func (s *Service) CreateTmpFile(ctx context.Context, filename string, file io.Re
 	filename = name + "_" + uid + ext
 
 	tmp, err := os.Create("/tmp/" + filename)
-
 	if err != nil {
 		return fmt.Errorf("cannot create tmp file: %w", err)
 	}
@@ -81,7 +79,6 @@ func (s *Service) CreateTmpFile(ctx context.Context, filename string, file io.Re
 	}()
 
 	_, err = io.Copy(tmp, file)
-
 	if err != nil {
 		return fmt.Errorf("cannot put file into tmp: %w", err)
 	}
@@ -130,7 +127,6 @@ func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *mod
 		}
 
 		b, err := s.GetBinaryAva(ctx, ava.S3Key)
-
 		if err != nil {
 			s.logger.Error("cannot download original avatar", "error", err)
 			return nil, http.StatusNotFound, fmt.Errorf("cannot download original avatar: %w", err)
@@ -146,7 +142,6 @@ func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *mod
 	}
 
 	b, err := s.GetBinaryThumbnail(ctx, ava, size)
-
 	if err != nil {
 		s.logger.Error("cannot download thumbnail avatar", "error", err)
 

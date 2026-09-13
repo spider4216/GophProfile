@@ -40,7 +40,6 @@ func NewService(logger *slog.Logger, q *queue.Queue, repo repositories.Repositor
 
 func (s *Service) Upload(ctx context.Context, e models.AvatarUploadEvent) error {
 	ava, err := s.repo.GetAvatarByID(ctx, e.AvatarID)
-
 	if err != nil {
 		return fmt.Errorf("cannot get ava from db: %w", err)
 	}
@@ -51,7 +50,6 @@ func (s *Service) Upload(ctx context.Context, e models.AvatarUploadEvent) error 
 	filename := name + "_" + e.S3Key + ext
 
 	file, err := os.Open("/tmp/" + filename)
-
 	if err != nil {
 		return fmt.Errorf("cannot open tmp file")
 	}
@@ -76,14 +74,12 @@ func (s *Service) Upload(ctx context.Context, e models.AvatarUploadEvent) error 
 func (s *Service) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent, quality int) error {
 	// Извлечь из БД аватар
 	ava, err := s.repo.GetAvatarByID(ctx, e.AvatarID)
-
 	if err != nil {
 		return fmt.Errorf("cannot get avatar from db: %w", err)
 	}
 
 	// Получить файл из Minio
 	b, err := s.s3Cli.Download(ctx, ava.S3Key)
-
 	if err != nil {
 		return fmt.Errorf("cannot get avatar from minio: %w", err)
 	}
@@ -153,7 +149,6 @@ func (s *Service) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent
 
 	// Сохранить thumbnails в БД
 	thumbBytes, err := json.Marshal(thumpnails)
-
 	if err != nil {
 		return fmt.Errorf("cannot marshal thumbnails: %w", err)
 	}
@@ -169,7 +164,6 @@ func (s *Service) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent
 func (s *Service) DeleteAvatar(ctx context.Context, e *models.AvatarDeleteEvent) error {
 	// Получаем ava
 	ava, err := s.repo.GetAvatarByID(ctx, e.AvatarID)
-
 	if err != nil {
 		return fmt.Errorf("cannot get ava for deleting: %w", err)
 	}

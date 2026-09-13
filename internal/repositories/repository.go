@@ -41,7 +41,6 @@ func (repo *Repository) CreateAvatar(ctx context.Context, ava models.Avatar) (st
 	var lastInsertId string
 
 	err := repo.con.QueryRowContext(ctx, sql, ava.UserID, ava.FileName, ava.MimeType, ava.SizeBytes, ava.S3Key).Scan(&lastInsertId)
-
 	if err != nil {
 		return "", fmt.Errorf("cannot insert ava: %w", err)
 	}
@@ -70,7 +69,6 @@ func (repo *Repository) GetAvatarByID(ctx context.Context, ID string) (*models.A
 		&ava.UpdatedAt,
 		&ava.DeletedAt,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot scan: %w", err)
 	}
@@ -104,7 +102,6 @@ func (repo *Repository) GetUserAvatarByID(ctx context.Context, userID string, ID
 		&ava.UpdatedAt,
 		&ava.DeletedAt,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot scan: %w", err)
 	}
@@ -120,7 +117,6 @@ func (repo *Repository) UpdateAvatarUplStatus(ctx context.Context, ID string, st
 	sql := "UPDATE avatars SET upload_status=$1 WHERE id=$2"
 
 	_, err := repo.con.ExecContext(ctx, sql, status, ID)
-
 	if err != nil {
 		return err
 	}
@@ -132,7 +128,6 @@ func (repo *Repository) UpdateThumbnails(ctx context.Context, ID string, thumbna
 	sql := "UPDATE avatars SET thumbnail_s3_keys=$1 WHERE id=$2"
 
 	_, err := repo.con.ExecContext(ctx, sql, thumbnails, ID)
-
 	if err != nil {
 		return err
 	}
@@ -145,7 +140,6 @@ func (repo *Repository) UpdateAvatarProcStatus(ctx context.Context, ID string, s
 	sql := "UPDATE avatars SET processing_status=$1 WHERE id=$2"
 
 	_, err := repo.con.ExecContext(ctx, sql, status, ID)
-
 	if err != nil {
 		return err
 	}
@@ -202,7 +196,6 @@ func (repo *Repository) GetLatestUserAvatar(ctx context.Context, userID string) 
 		&ava.UpdatedAt,
 		&ava.DeletedAt,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot scan: %w", err)
 	}
@@ -218,7 +211,6 @@ func (repo *Repository) DeleteAvatar(ctx context.Context, ID string) error {
 	sql := "UPDATE avatars SET deleted_at=$1 WHERE id=$2"
 
 	_, err := repo.con.ExecContext(ctx, sql, time.Now(), ID)
-
 	if err != nil {
 		return err
 	}

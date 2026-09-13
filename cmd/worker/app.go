@@ -37,7 +37,6 @@ func (a *app) Run() error {
 
 func (a *app) initQueue() error {
 	q, err := queue.NewQueue(a.cfg.RabbitDSN, a.logger)
-
 	if err != nil {
 		return fmt.Errorf("cannot init queue: %w", err)
 	}

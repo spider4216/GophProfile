@@ -26,7 +26,6 @@ func NewHandler(logger *slog.Logger, service *services.Service, cfg *config.Conf
 
 func (h *Handler) UploadAvatar(ctx context.Context, e models.AvatarUploadEvent) error {
 	err := h.service.Upload(ctx, e)
-
 	if err != nil {
 		return fmt.Errorf("cannot upload avatar: %w", err)
 	}

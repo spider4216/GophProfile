@@ -47,7 +47,6 @@ func (s *S3Client) Upload(ctx context.Context, key string, reader io.ReadSeeker,
 		Body:        reader,
 		ContentType: aws.String(ctype),
 	})
-
 	if err != nil {
 		return fmt.Errorf("cannot put object to bucket s3: %w", err)
 	}
@@ -60,7 +59,6 @@ func (s *S3Client) DeleteAva(ctx context.Context, key string) error {
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
 	})
-
 	if err != nil {
 		return fmt.Errorf("cannot delete object from minio: %w", err)
 	}
@@ -74,7 +72,6 @@ func (s *S3Client) Download(ctx context.Context, key string) ([]byte, error) {
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to download object from bucket s3: %w", err)
 	}
@@ -85,7 +82,6 @@ func (s *S3Client) Download(ctx context.Context, key string) ([]byte, error) {
 	buf := &bytes.Buffer{}
 
 	_, err = io.Copy(buf, result.Body)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to read object data in s3: %w", err)
 	}

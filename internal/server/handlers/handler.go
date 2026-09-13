@@ -38,7 +38,6 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 
 	// todo field name to const
 	file, header, err := r.FormFile("file")
-
 	if err != nil {
 		h.logger.Error("something wrong with file", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -73,7 +72,6 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ava, err := h.service.CreateAvatar(ctx, fileName, mimetype, fileSize, uid)
-
 	if err != nil {
 		h.logger.Error("cannot create avatar", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -99,7 +97,6 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := json.Marshal(resp)
-
 	if err != nil {
 		h.logger.Error("cannot marshal response", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -122,13 +119,11 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	size := r.URL.Query().Get("size")
 
 	ava, err := h.service.GetAvatarByID(ctx, id)
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			h.logger.Error("avatar not found", "error", err)
 
 			b, err := h.service.PrepareNotFoundResp()
-
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				h.logger.Error("cannot marshal 404 resp")
@@ -154,12 +149,10 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 
 	// Получаем аватар или thumbnail
 	b, code, err := h.service.GetComplexBinaryAva(ctx, size, ava)
-
 	if err != nil {
 		// Если аватара нет, то возвращаем ответ с телом
 		if code == http.StatusNotFound {
 			b, err := h.service.PrepareNotFoundResp()
-
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				h.logger.Error("cannot marshal 404 resp")
@@ -201,7 +194,6 @@ func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("avatar_id")
 
 	ava, err := h.service.GetAvatarByID(ctx, id)
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			h.logger.Error("avatar not found", "error", err)
@@ -217,7 +209,6 @@ func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
 	resp := h.mapMetaResp(ava, h.cfg.ServerAddress)
 
 	b, err := json.Marshal(resp)
-
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		h.logger.Error("cannot marshal")
@@ -238,7 +229,6 @@ func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("user_id")
 
 	ava, err := h.service.GetLatestActiveUserAvatar(ctx, userID)
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			h.logger.Error("avatar not found", "error", err)
@@ -253,7 +243,6 @@ func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 
 	// Получаем аватар или thumbnail
 	b, code, err := h.service.GetComplexBinaryAva(ctx, size, ava)
-
 	if err != nil {
 		// Если аватара нет, то возвращаем ответ
 		if code == http.StatusNotFound {
@@ -290,7 +279,6 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 	avaID := r.PathValue("id")
 
 	ava, err := h.service.GetAvatarByID(ctx, avaID)
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			h.logger.Error("avatar not found", "error", err)
@@ -308,7 +296,6 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error("ava user id not match with request user id")
 
 		b, err := h.service.PrepareForbiddenResp()
-
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			h.logger.Error("cannot marshal forbidden resp")
@@ -343,7 +330,6 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := json.Marshal(resp)
-
 	if err != nil {
 		h.logger.Error("cannot marshal response", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -365,7 +351,6 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	avas, err := h.service.GetUserAvatars(ctx, userID)
-
 	if err != nil {
 		h.logger.Error("cannot get user avatars", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -394,7 +379,6 @@ func (h *Handler) GetUserAvatars(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	avas, err := h.service.GetUserAvatars(ctx, userID)
-
 	if err != nil {
 		h.logger.Error("cannot get user avatars", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -410,7 +394,6 @@ func (h *Handler) GetUserAvatars(w http.ResponseWriter, r *http.Request) {
 	resp := h.mapMetasResp(avas, h.cfg.ServerAddress)
 
 	b, err := json.Marshal(resp)
-
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		h.logger.Error("cannot marshal")
