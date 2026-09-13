@@ -50,7 +50,7 @@ func (repo *Repository) CreateAvatar(ctx context.Context, ava models.Avatar) (st
 }
 
 func (repo *Repository) GetAvatarByID(ctx context.Context, ID string) (*models.Avatar, error) {
-	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE id=$1"
+	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE id=$1 and deleted_at IS NULL"
 
 	var ava models.Avatar
 
@@ -84,7 +84,7 @@ func (repo *Repository) GetAvatarByID(ctx context.Context, ID string) (*models.A
 
 // todo подумать возможно объединить с GetAvatarByID  как то
 func (repo *Repository) GetUserAvatarByID(ctx context.Context, userID string, ID string) (*models.Avatar, error) {
-	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE id=$1 and user_id=$2"
+	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE id=$1 and user_id=$2 and deleted_at IS NULL"
 
 	var ava models.Avatar
 
