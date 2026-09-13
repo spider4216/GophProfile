@@ -44,7 +44,9 @@ func main() {
 				break
 			}
 
-			d.Ack(false)
+			if err := d.Ack(false); err != nil {
+				app.logger.Warn("cannot ack in consume upload")
+			}
 		case d := <-app.queue.DeleteConsumer:
 			app.logger.Debug("Consume delete...")
 
@@ -60,7 +62,9 @@ func main() {
 				break
 			}
 
-			d.Ack(false)
+			if err := d.Ack(false); err != nil {
+				app.logger.Warn("cannot ack in consume delete")
+			}
 		case d := <-app.queue.ProcessConsumer:
 			app.logger.Debug("Consume process...")
 
@@ -76,7 +80,9 @@ func main() {
 				break
 			}
 
-			d.Ack(false)
+			if err := d.Ack(false); err != nil {
+				app.logger.Warn("cannot ack in consume process")
+			}
 		}
 	}
 }

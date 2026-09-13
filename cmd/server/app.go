@@ -119,7 +119,7 @@ func (a *app) initQueue() error {
 }
 
 func (a *app) initMinio() error {
-	a.s3Client = minio.NewS3Client(a.cfg.MinioUser, a.cfg.MinioPass, a.cfg.MinioHost, a.cfg.BucketName)
+	a.s3Client = minio.NewS3Client(a.cfg.MinioUser, a.cfg.MinioPass, a.cfg.MinioHost, a.cfg.BucketName, a.logger)
 
 	return nil
 }

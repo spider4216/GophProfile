@@ -44,7 +44,11 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			h.logger.Warn("cannot file close", "error", err)
+		}
+	}()
 
 	fileName := header.Filename
 	fileSize := header.Size

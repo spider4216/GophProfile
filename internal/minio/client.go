@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -20,9 +21,10 @@ const (
 type S3Client struct {
 	cli        *s3.S3
 	bucketName string
+	logger     *slog.Logger
 }
 
-func NewS3Client(login string, pass string, host string, bucket string) *S3Client {
+func NewS3Client(login string, pass string, host string, bucket string, logger *slog.Logger) *S3Client {
 	s3Cfg := &aws.Config{
 		Region:           aws.String(region),
 		Endpoint:         aws.String(host),
@@ -37,6 +39,7 @@ func NewS3Client(login string, pass string, host string, bucket string) *S3Clien
 	return &S3Client{
 		cli:        client,
 		bucketName: bucket,
+		logger:     logger,
 	}
 }
 
@@ -76,7 +79,11 @@ func (s *S3Client) Download(ctx context.Context, key string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to download object from bucket s3: %w", err)
 	}
 
-	defer result.Body.Close()
+	defer func() {
+		if err := result.Body.Close(); err != nil {
+			s.logger.Warn("cannot close body", "error", err)
+		}
+	}()
 
 	// Читаем данные в buffer
 	buf := &bytes.Buffer{}
