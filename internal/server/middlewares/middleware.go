@@ -3,7 +3,7 @@ package middlewares
 import (
 	"log/slog"
 
-	"github.com/spider4216/GophProfile/internal/server/config"
+	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/services"
 )
 

@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	buldCfg "github.com/spider4216/GophProfile/internal/config"
+	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
-	"github.com/spider4216/GophProfile/internal/server/config"
 	"github.com/spider4216/GophProfile/internal/worker/minio"
 	"github.com/spider4216/GophProfile/migrations"
 )
@@ -28,7 +27,7 @@ func newApp() *app {
 }
 
 func (a *app) Run() error {
-	_, err := buldCfg.NewBuilder(a).
+	_, err := config.NewBuilder(a).
 		Step((*app).initConfig).
 		Step((*app).initLogger).
 		Step((*app).initRepo).
@@ -48,7 +47,7 @@ func (a *app) initConfig() error {
 		return err
 	}
 
-	if cfg.DbDsn == "" {
+	if cfg.DbDSN == "" {
 		return errors.New("dsn didtn't passed")
 	}
 
@@ -66,7 +65,7 @@ func (a *app) initLogger() error {
 }
 
 func (a *app) initRepo() error {
-	repo, err := repositories.NewRepository(a.cfg.DbDsn, a.logger)
+	repo, err := repositories.NewRepository(a.cfg.DbDSN, a.logger)
 	if err != nil {
 		return err
 	}

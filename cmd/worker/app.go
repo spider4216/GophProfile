@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	buldCfg "github.com/spider4216/GophProfile/internal/config"
+	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
-	"github.com/spider4216/GophProfile/internal/worker/config"
 	"github.com/spider4216/GophProfile/internal/worker/minio"
 )
 
@@ -25,7 +24,7 @@ func newApp() *app {
 }
 
 func (a *app) Run() error {
-	_, err := buldCfg.NewBuilder(a).
+	_, err := config.NewBuilder(a).
 		Step((*app).initConfig).
 		Step((*app).initLogger).
 		Step((*app).initRepo).

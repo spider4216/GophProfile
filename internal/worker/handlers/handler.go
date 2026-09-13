@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/models"
-	"github.com/spider4216/GophProfile/internal/worker/config"
 	"github.com/spider4216/GophProfile/internal/worker/services"
 )
 

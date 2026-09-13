@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/enum"
-	"github.com/spider4216/GophProfile/internal/server/config"
 	"github.com/spider4216/GophProfile/internal/server/models"
 	"github.com/spider4216/GophProfile/internal/services"
 )
