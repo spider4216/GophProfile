@@ -367,7 +367,6 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 	avas, err := h.service.GetUserAvatars(ctx, userID)
 
 	if err != nil {
-
 		h.logger.Error("cannot get user avatars", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -386,4 +385,42 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) GetUserAvatars(w http.ResponseWriter, r *http.Request) {
+	h.logger.Debug("Delete user avatars")
+
+	userID := r.PathValue("user_id")
+	ctx := r.Context()
+
+	avas, err := h.service.GetUserAvatars(ctx, userID)
+
+	if err != nil {
+		h.logger.Error("cannot get user avatars", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(avas) <= 0 {
+		h.logger.Error("user avatars not found", "error", err)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	resp := h.mapMetasResp(avas, h.cfg.ServerAddress)
+
+	b, err := json.Marshal(resp)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.logger.Error("cannot marshal")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	if _, err := w.Write(b); err != nil {
+		h.logger.Error("failed to write response", "error", err)
+		return
+	}
 }

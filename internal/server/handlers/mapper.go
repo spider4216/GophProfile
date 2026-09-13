@@ -7,6 +7,16 @@ import (
 	"github.com/spider4216/GophProfile/internal/server/models"
 )
 
+func (h *Handler) mapMetasResp(avas []genModel.Avatar, host string) []models.GetMetaResp {
+	var metas []models.GetMetaResp
+
+	for _, ava := range avas {
+		metas = append(metas, *h.mapMetaResp(&ava, host))
+	}
+
+	return metas
+}
+
 func (h *Handler) mapMetaResp(ava *genModel.Avatar, host string) *models.GetMetaResp {
 	var thumbnails []models.Thumbnail
 
