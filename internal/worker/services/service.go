@@ -166,6 +166,39 @@ func (s *Service) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent
 	return nil
 }
 
+func (s *Service) DeleteAvatar(ctx context.Context, e *models.AvatarDeleteEvent) error {
+	// Получаем ava
+	ava, err := s.repo.GetAvatarByID(ctx, e.AvatarID)
+
+	if err != nil {
+		return fmt.Errorf("cannot get ava for deleting: %w", err)
+	}
+
+	var g errgroup.Group
+
+	// Удаляем все thumbnails в minio
+	for _, s3key := range ava.ThumbnailS3Keys {
+		// Замыкаем
+		k := s3key
+		// thumbIDs = append(thumbIDs, id)
+		g.Go(func() error {
+			return s.s3Cli.DeleteAva(ctx, k)
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("error while deleting thumbnail: %w", err)
+	}
+
+	// Удаляем основной avatar в minio
+	if err := s.s3Cli.DeleteAva(ctx, ava.S3Key); err != nil {
+		return fmt.Errorf("cannot delete avatar from minio: %w", err)
+	}
+
+	// Удаляем avatar из DB в Soft режиме
+	return s.repo.DeleteAvatar(ctx, ava.ID)
+}
+
 func (s *Service) SendProcessEvent(ctx context.Context, avaID string) error {
 	e := models.AvatarProcessEvent{
 		AvatarID: avaID,

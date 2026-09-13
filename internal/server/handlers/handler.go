@@ -281,8 +281,57 @@ func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) DeleteUserAvatar(w http.ResponseWriter, r *http.Request) {
-	// todo logic
+func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
+	h.logger.Debug("Delete avatar")
+	ctx := r.Context()
+
+	userID := h.service.GetUserIdFromCtx(ctx)
+
+	avaID := r.PathValue("id")
+
+	ava, err := h.service.GetAvatarByID(ctx, avaID)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			h.logger.Error("avatar not found", "error", err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		h.logger.Error("cannot get avatar", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if ava.UserID != userID {
+		// todo resp body
+		h.logger.Error("ava user id not match with request user id")
+
+		b, err := h.service.PrepareForbiddenResp()
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			h.logger.Error("cannot marshal forbidden resp")
+			return
+		}
+
+		w.WriteHeader(http.StatusForbidden)
+
+		if _, err := w.Write(b); err != nil {
+			h.logger.Error("failed to write response", "error", err)
+			return
+		}
+
+		return
+	}
+
+	if err := h.service.SendDeleteEvent(ctx, ava.ID); err != nil {
+		h.logger.Error("cannot send evet fpr delete ava", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {

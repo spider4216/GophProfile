@@ -16,3 +16,7 @@ type AvatarProcessEvent struct {
 	AvatarID   string         `json:"avatar_id"`
 	Operations []ProcessingOp `json:"operations"`
 }
+
+type AvatarDeleteEvent struct {
+	AvatarID string `json:"avatar_id"`
+}

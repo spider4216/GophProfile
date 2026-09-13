@@ -99,6 +99,14 @@ func (s *Service) SendUploadEvent(ctx context.Context, userID string, avaID stri
 	return s.queue.SendUploadEvent(ctx, e)
 }
 
+func (s *Service) SendDeleteEvent(ctx context.Context, avaID string) error {
+	e := models.AvatarDeleteEvent{
+		AvatarID: avaID,
+	}
+
+	return s.queue.SendDeleteEvent(ctx, e)
+}
+
 func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *models.Avatar) ([]byte, int, error) {
 	if size == "" {
 		if ava.UploadStatus != enum.Uploaded.String() {
@@ -151,6 +159,10 @@ func (s *Service) GetAvatarByID(ctx context.Context, ID string) (*models.Avatar,
 	return s.repo.GetAvatarByID(ctx, ID)
 }
 
+func (s *Service) GetUserAvatarByID(ctx context.Context, ID string, userID string) (*models.Avatar, error) {
+	return s.repo.GetUserAvatarByID(ctx, ID, userID)
+}
+
 func (s *Service) HashBinary(data []byte) string {
 	hash := sha256.Sum256(data)
 
@@ -160,6 +172,15 @@ func (s *Service) HashBinary(data []byte) string {
 func (s *Service) PrepareNotFoundResp() ([]byte, error) {
 	resp := srvModel.GetNoAvaResp{
 		Err: "Avatar not found",
+	}
+
+	return json.Marshal(resp)
+}
+
+func (s *Service) PrepareForbiddenResp() ([]byte, error) {
+	resp := srvModel.ForbiddenResp{
+		Error:   "Forbidden",
+		Details: "You can only delete your own avatars",
 	}
 
 	return json.Marshal(resp)

@@ -76,6 +76,33 @@ func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent)
 	)
 }
 
+// todo DRY
+func (q *Queue) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent) error {
+	b, err := json.Marshal(e)
+
+	if err != nil {
+		return fmt.Errorf("cannot marshal delete event payload: %w", err)
+	}
+
+	ch, err := q.CreateCh()
+
+	if err != nil {
+		return fmt.Errorf("cannot create channel for delete publish: %w", err)
+	}
+
+	return ch.PublishWithContext(
+		ctx,
+		exchange,           // exchange пока default
+		q.deleteQueue.Name, // routingKey
+		false,
+		false,
+		amqp.Publishing{
+			Body:         b,               // тело сообщения
+			DeliveryMode: amqp.Persistent, // сообщение будет сохранено на диск
+		},
+	)
+}
+
 // todo general func send event
 func (q *Queue) SendProcessEvent(ctx context.Context, e models.AvatarProcessEvent) error {
 	b, err := json.Marshal(e)

@@ -55,6 +55,19 @@ func (s *S3Client) Upload(ctx context.Context, key string, reader io.ReadSeeker,
 	return nil
 }
 
+func (s *S3Client) DeleteAva(ctx context.Context, key string) error {
+	_, err := s.cli.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucketName),
+		Key:    aws.String(key),
+	})
+
+	if err != nil {
+		return fmt.Errorf("cannot delete object from minio: %w", err)
+	}
+
+	return nil
+}
+
 func (s *S3Client) Download(ctx context.Context, key string) ([]byte, error) {
 	// Получаем объект из S3
 	result, err := s.cli.GetObjectWithContext(ctx, &s3.GetObjectInput{

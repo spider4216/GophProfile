@@ -47,6 +47,19 @@ func main() {
 			d.Ack(false)
 		case d := <-app.queue.DeleteConsumer:
 			app.logger.Debug("Consume delete...")
+
+			var event models.AvatarDeleteEvent
+
+			if err := json.Unmarshal(d.Body, &event); err != nil {
+				app.logger.Error("Cannot unmarshall", "error", err)
+				break
+			}
+
+			if err := handler.DeleteAvatar(ctx, &event); err != nil {
+				app.logger.Error("Cannot delete avatar", "error", err)
+				break
+			}
+
 			d.Ack(false)
 		case d := <-app.queue.ProcessConsumer:
 			app.logger.Debug("Consume process...")
