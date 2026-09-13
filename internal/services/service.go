@@ -107,6 +107,21 @@ func (s *Service) SendDeleteEvent(ctx context.Context, avaID string) error {
 	return s.queue.SendDeleteEvent(ctx, e)
 }
 
+func (s *Service) SendDeleteEvents(ctx context.Context, avas []models.Avatar) error {
+	for _, ava := range avas {
+		s.logger.Debug("Send to delete ava", "id", ava.ID)
+		e := models.AvatarDeleteEvent{
+			AvatarID: ava.ID,
+		}
+
+		if err := s.queue.SendDeleteEvent(ctx, e); err != nil {
+			return fmt.Errorf("cannit send event to delete avatar")
+		}
+	}
+
+	return nil
+}
+
 func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *models.Avatar) ([]byte, int, error) {
 	if size == "" {
 		if ava.UploadStatus != enum.Uploaded.String() {
@@ -188,4 +203,8 @@ func (s *Service) PrepareForbiddenResp() ([]byte, error) {
 
 func (s *Service) GetLatestActiveUserAvatar(ctx context.Context, userID string) (*models.Avatar, error) {
 	return s.repo.GetLatestUserAvatar(ctx, userID)
+}
+
+func (s *Service) GetUserAvatars(ctx context.Context, userID string) ([]models.Avatar, error) {
+	return s.repo.GetUserAvatars(ctx, userID)
 }

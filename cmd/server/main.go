@@ -39,6 +39,7 @@ func main() {
 	mux.Handle("GET /api/v1/users/{user_id}/avatar", middleware.WithLogging(http.HandlerFunc(handler.GetUserAvatar)))
 	mux.Handle("GET /api/v1/avatars/{avatar_id}/metadata", middleware.WithLogging(http.HandlerFunc(handler.GetMetaAvatar)))
 	mux.Handle("DELETE /api/v1/avatars/{id}", middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.DeleteAvatar))))
+	mux.Handle("DELETE /api/v1/users/{user_id}/avatar", middleware.WithLogging(http.HandlerFunc(handler.DeleteUserAvatars)))
 
 	srv := &http.Server{
 		Addr:         app.cfg.ServerAddress,

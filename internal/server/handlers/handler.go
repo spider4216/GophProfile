@@ -357,3 +357,33 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
+	h.logger.Debug("Delete user avatars")
+
+	userID := r.PathValue("user_id")
+	ctx := r.Context()
+
+	avas, err := h.service.GetUserAvatars(ctx, userID)
+
+	if err != nil {
+
+		h.logger.Error("cannot get user avatars", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(avas) <= 0 {
+		h.logger.Error("user avatars not found", "error", err)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if err := h.service.SendDeleteEvents(ctx, avas); err != nil {
+		h.logger.Error("cannot send evet for delete avatars", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

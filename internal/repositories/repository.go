@@ -225,3 +225,54 @@ func (repo *Repository) DeleteAvatar(ctx context.Context, ID string) error {
 
 	return nil
 }
+
+func (repo *Repository) GetUserAvatars(ctx context.Context, userID string) ([]models.Avatar, error) {
+	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE user_id=$1 and deleted_at IS NULL ORDER BY created_at"
+
+	rows, err := repo.con.QueryContext(ctx, sql, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := rows.Close(); err != nil {
+			repo.logger.Warn("cannot close rows", "error", err)
+		}
+	}()
+
+	var avatars []models.Avatar
+	var thumbnailS3Keys []byte
+
+	for rows.Next() {
+		var ava models.Avatar
+
+		if err := rows.Scan(
+			&ava.ID,
+			&ava.UserID,
+			&ava.FileName,
+			&ava.MimeType,
+			&ava.SizeBytes,
+			&ava.S3Key,
+			&thumbnailS3Keys,
+			&ava.UploadStatus,
+			&ava.ProcessingStatus,
+			&ava.CreatedAt,
+			&ava.UpdatedAt,
+			&ava.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(thumbnailS3Keys, &ava.ThumbnailS3Keys); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal avatar: %w", err)
+		}
+
+		avatars = append(avatars, ava)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return avatars, nil
+}

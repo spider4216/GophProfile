@@ -19,4 +19,5 @@ type RepositoryInterface interface {
 	CommitProcess(ctx context.Context, avatarID string, thumbBytes []byte) error
 	GetLatestUserAvatar(ctx context.Context, userID string) (*models.Avatar, error)
 	DeleteAvatar(ctx context.Context, ID string) error
+	GetUserAvatars(ctx context.Context, userID string) ([]models.Avatar, error)
 }

@@ -182,6 +182,7 @@ func (s *Service) DeleteAvatar(ctx context.Context, e *models.AvatarDeleteEvent)
 		k := s3key
 		// thumbIDs = append(thumbIDs, id)
 		g.Go(func() error {
+			s.logger.Debug("delete key", "key", k)
 			return s.s3Cli.DeleteAva(ctx, k)
 		})
 	}
@@ -191,6 +192,7 @@ func (s *Service) DeleteAvatar(ctx context.Context, e *models.AvatarDeleteEvent)
 	}
 
 	// Удаляем основной avatar в minio
+	s.logger.Debug("delete key", "key", ava.S3Key)
 	if err := s.s3Cli.DeleteAva(ctx, ava.S3Key); err != nil {
 		return fmt.Errorf("cannot delete avatar from minio: %w", err)
 	}
