@@ -2,8 +2,10 @@ package services
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/spider4216/GophProfile/internal/logger"
 	"github.com/spider4216/GophProfile/internal/minio/miniotest"
 	"github.com/spider4216/GophProfile/internal/models"
@@ -53,4 +55,27 @@ func TestCreateAvatar(t *testing.T) {
 
 	assert.Equal(t, ava.ID, avaSrc.ID)
 	assert.Equal(t, ava.FileName, avaSrc.FileName)
+}
+
+func TestCreateTmpFile(t *testing.T) {
+	store := map[string][][]byte{}
+
+	service := prepareService(store)
+
+	f, err := os.Create("/tmp/src")
+	require.NoError(t, err)
+
+	uid := uuid.NewString()
+
+	err = service.CreateTmpFile(t.Context(), "test.jpg", f, uid)
+	require.NoError(t, err)
+
+	path := "/tmp/test_" + uid + ".jpg"
+
+	_, err = os.Open(path)
+
+	require.NoError(t, err)
+
+	err = os.Remove(path)
+	require.NoError(t, err)
 }
