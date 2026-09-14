@@ -51,7 +51,6 @@ func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
 
 func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent) error {
 	ch, err := q.CreateCh()
-
 	if err != nil {
 		return fmt.Errorf("cannot create ch for upload event: %w", err)
 	}
@@ -61,7 +60,6 @@ func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent)
 
 func (q *Queue) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent) error {
 	ch, err := q.CreateCh()
-
 	if err != nil {
 		return fmt.Errorf("cannot create ch for delete event: %w", err)
 	}
@@ -71,7 +69,6 @@ func (q *Queue) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent)
 
 func (q *Queue) SendProcessEvent(ctx context.Context, e models.AvatarProcessEvent) error {
 	ch, err := q.CreateCh()
-
 	if err != nil {
 		return fmt.Errorf("cannot create ch for process event: %w", err)
 	}

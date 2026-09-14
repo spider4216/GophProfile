@@ -21,7 +21,6 @@ import (
 	srvModel "github.com/spider4216/GophProfile/internal/server/models"
 )
 
-// todo подумать о том чтобы объединить сервисы сервера и воркера в один
 type Service struct {
 	repo   repositories.RepositoryInterface
 	logger *slog.Logger

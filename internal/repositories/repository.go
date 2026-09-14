@@ -102,7 +102,6 @@ func (repo *Repository) UpdateThumbnails(ctx context.Context, ID string, thumbna
 	return nil
 }
 
-// todo можно сделать один sql для этой функции и UpdateAvatarUplStatus
 func (repo *Repository) UpdateAvatarProcStatus(ctx context.Context, ID string, status enum.ProcStatus) error {
 	sql := "UPDATE avatars SET processing_status=$1 WHERE id=$2"
 

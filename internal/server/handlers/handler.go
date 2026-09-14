@@ -36,7 +36,6 @@ func New(cfg *config.Config, logger *slog.Logger, service *services.Service) Han
 func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// todo field name to const
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		h.logger.Error("something wrong with file", "error", err)
@@ -296,7 +295,6 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ava.UserID != userID {
-		// todo resp body
 		h.logger.Error("ava user id not match with request user id")
 
 		b, err := h.service.PrepareForbiddenResp()
@@ -328,7 +326,6 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// todo logic
 	resp := models.HealthResp{
 		DB: h.service.IsDBOK(ctx),
 	}
