@@ -4,8 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/spider4216/GophProfile/internal/models"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/spider4216/GophProfile/internal/worker/handlers"
 	"github.com/spider4216/GophProfile/internal/worker/services"
 )
@@ -20,69 +24,45 @@ func main() {
 	service := services.NewService(app.logger, app.queue, app.repo, app.s3Client)
 	handler := handlers.NewHandler(app.logger, service, app.cfg)
 
-	// todo ctx with timeout
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	app.logger.Debug("Run consumers...")
-
-	// todo gracefull shutdown
 
 	for {
 		select {
 		case d := <-app.queue.UploadConsumer:
 			app.logger.Debug("Consume upload...")
-
-			var event models.AvatarUploadEvent
-
-			if err := json.Unmarshal(d.Body, &event); err != nil {
-				app.logger.Error("Cannot unmarshall", "error", err)
-				break
-			}
-
-			if err := handler.UploadAvatar(ctx, event); err != nil {
-				app.logger.Error("Cannot upload avatar", "error", err)
-				break
-			}
-
-			if err := d.Ack(false); err != nil {
-				app.logger.Warn("cannot ack in consume upload")
-			}
+			consume(ctx, d, handler.UploadAvatar, app.logger)
 		case d := <-app.queue.DeleteConsumer:
 			app.logger.Debug("Consume delete...")
-
-			var event models.AvatarDeleteEvent
-
-			if err := json.Unmarshal(d.Body, &event); err != nil {
-				app.logger.Error("Cannot unmarshall", "error", err)
-				break
-			}
-
-			if err := handler.DeleteAvatar(ctx, &event); err != nil {
-				app.logger.Error("Cannot delete avatar", "error", err)
-				break
-			}
-
-			if err := d.Ack(false); err != nil {
-				app.logger.Warn("cannot ack in consume delete")
-			}
+			consume(ctx, d, handler.DeleteAvatar, app.logger)
 		case d := <-app.queue.ProcessConsumer:
 			app.logger.Debug("Consume process...")
-
-			var event models.AvatarProcessEvent
-
-			if err := json.Unmarshal(d.Body, &event); err != nil {
-				app.logger.Error("Cannot unmarshall", "error", err)
-				break
-			}
-
-			if err := handler.ProcessAvatar(ctx, event); err != nil {
-				app.logger.Error("Cannot process avatar", "error", err)
-				break
-			}
-
-			if err := d.Ack(false); err != nil {
-				app.logger.Warn("cannot ack in consume process")
-			}
+			consume(ctx, d, handler.ProcessAvatar, app.logger)
 		}
+	}
+}
+
+func consume[T any](
+	ctx context.Context,
+	delivery amqp091.Delivery,
+	f func(ctx context.Context, e T) error,
+	logger *slog.Logger,
+) {
+	var event T
+
+	if err := json.Unmarshal(delivery.Body, &event); err != nil {
+		logger.Error("Cannot unmarshall", "error", err)
+		return
+	}
+
+	if err := f(ctx, event); err != nil {
+		logger.Error("cannot consume", "error", err)
+		return
+	}
+
+	if err := delivery.Ack(false); err != nil {
+		logger.Warn("cannot ack in consume delete")
 	}
 }
