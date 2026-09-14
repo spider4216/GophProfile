@@ -2,18 +2,20 @@ package reptest
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 
+	"github.com/google/uuid"
 	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/models"
 )
 
 type SliceRepository struct {
-	data   map[string][]string
+	data   map[string][][]byte
 	logger *slog.Logger
 }
 
-func NewRepository(logger *slog.Logger, store map[string][]string) *SliceRepository {
+func NewRepository(logger *slog.Logger, store map[string][][]byte) *SliceRepository {
 	return &SliceRepository{
 		data:   store,
 		logger: logger,
@@ -29,7 +31,16 @@ func (r *SliceRepository) Source() any {
 }
 
 func (r *SliceRepository) CreateAvatar(ctx context.Context, ava models.Avatar) (string, error) {
-	return "", nil
+	ava.ID = uuid.NewString()
+
+	b, err := json.Marshal(ava)
+	if err != nil {
+		return "", err
+	}
+
+	r.data["avatars"] = append(r.data["avatars"], b)
+
+	return ava.ID, nil
 }
 
 func (r *SliceRepository) GetAvatarByID(ctx context.Context, ID string) (*models.Avatar, error) {

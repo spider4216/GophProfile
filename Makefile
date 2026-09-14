@@ -35,3 +35,6 @@ lint:
 
 fmt:
 	golangci-lint fmt
+
+test:
+	go test -v ./...

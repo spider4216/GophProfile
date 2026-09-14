@@ -52,9 +52,11 @@ func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
 func (q *Queue) GetUploadConsumer() <-chan amqp.Delivery {
 	return q.uploadConsumer
 }
+
 func (q *Queue) GetDeleteConsumer() <-chan amqp.Delivery {
 	return q.deleteConsumer
 }
+
 func (q *Queue) GetProcessConsumer() <-chan amqp.Delivery {
 	return q.processConsumer
 }

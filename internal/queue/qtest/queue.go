@@ -13,11 +13,11 @@ type QueueSlice struct {
 	logger *slog.Logger
 }
 
-func NewQueue(logger *slog.Logger) (*QueueSlice, error) {
+func NewQueue(logger *slog.Logger) *QueueSlice {
 	return &QueueSlice{
 		logger: logger,
 		data:   []map[string]string{},
-	}, nil
+	}
 }
 
 func (q *QueueSlice) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent) error {
