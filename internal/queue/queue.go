@@ -55,6 +55,12 @@ func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent)
 		return fmt.Errorf("cannot create ch for upload event: %w", err)
 	}
 
+	defer func() {
+		if err := ch.Close(); err != nil {
+			q.logger.Warn("cannot close channel", "error", err)
+		}
+	}()
+
 	return sendEvent(ctx, e, q.uploadQueue.Name, ch)
 }
 
@@ -64,6 +70,12 @@ func (q *Queue) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent)
 		return fmt.Errorf("cannot create ch for delete event: %w", err)
 	}
 
+	defer func() {
+		if err := ch.Close(); err != nil {
+			q.logger.Warn("cannot close channel", "error", err)
+		}
+	}()
+
 	return sendEvent(ctx, e, q.deleteQueue.Name, ch)
 }
 
@@ -72,6 +84,12 @@ func (q *Queue) SendProcessEvent(ctx context.Context, e models.AvatarProcessEven
 	if err != nil {
 		return fmt.Errorf("cannot create ch for process event: %w", err)
 	}
+
+	defer func() {
+		if err := ch.Close(); err != nil {
+			q.logger.Warn("cannot close channel", "error", err)
+		}
+	}()
 
 	return sendEvent(ctx, e, q.processQueue.Name, ch)
 }
@@ -128,6 +146,12 @@ func (q *Queue) DeclareExchange() error {
 		return fmt.Errorf("cannot decalre excahnge events")
 	}
 
+	defer func() {
+		if err := ch.Close(); err != nil {
+			q.logger.Warn("cannot close channel", "error", err)
+		}
+	}()
+
 	return ch.ExchangeDeclare(exchange, "direct", true, false, false, false, nil)
 }
 
@@ -136,6 +160,12 @@ func (q *Queue) QueuesBind() error {
 	if err != nil {
 		return fmt.Errorf("cannot create ch in queue bind: %w", err)
 	}
+
+	defer func() {
+		if err := ch.Close(); err != nil {
+			q.logger.Warn("cannot close channel", "error", err)
+		}
+	}()
 
 	if err := ch.QueueBind(uploadQueueName.String(), uploadQueueName.String(), exchange, false, nil); err != nil {
 		return fmt.Errorf("cannot bind upload key to exchage: %w", err)
@@ -188,6 +218,12 @@ func (q *Queue) declareQueue(name queueName) (*amqp.Queue, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create channel while declare %s queue: %w", name, err)
 	}
+
+	defer func() {
+		if err := ch.Close(); err != nil {
+			q.logger.Warn("cannot close channel", "error", err)
+		}
+	}()
 
 	myq, err := ch.QueueDeclare(
 		name.String(), // имя очереди
