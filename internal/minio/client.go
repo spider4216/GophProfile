@@ -57,7 +57,6 @@ func (s *S3Client) InitBucket() error {
 	_, err = s.cli.CreateBucket(&s3.CreateBucketInput{
 		Bucket: aws.String(s.bucketName),
 	})
-
 	if err != nil {
 		return fmt.Errorf("create bucket %q: %w", s.bucketName, err)
 	}
