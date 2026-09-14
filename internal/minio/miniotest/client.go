@@ -9,12 +9,14 @@ import (
 type S3ClientTest struct {
 	bucketName string
 	logger     *slog.Logger
+	data       map[string][][]byte
 }
 
-func NewS3Client(bucket string, logger *slog.Logger) *S3ClientTest {
+func NewS3Client(bucket string, logger *slog.Logger, mstore map[string][][]byte) *S3ClientTest {
 	return &S3ClientTest{
 		bucketName: bucket,
 		logger:     logger,
+		data:       mstore,
 	}
 }
 

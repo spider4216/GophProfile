@@ -2,6 +2,7 @@ package qtest
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -9,18 +10,26 @@ import (
 )
 
 type QueueSlice struct {
-	data   []map[string]string
+	data   map[string][][]byte
 	logger *slog.Logger
 }
 
-func NewQueue(logger *slog.Logger) *QueueSlice {
+func NewQueue(logger *slog.Logger, store map[string][][]byte) *QueueSlice {
 	return &QueueSlice{
 		logger: logger,
-		data:   []map[string]string{},
+		data:   store,
 	}
 }
 
 func (q *QueueSlice) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent) error {
+	b, err := json.Marshal(e)
+
+	if err != nil {
+		return err
+	}
+
+	q.data["uploads"] = append(q.data["uploads"], b)
+
 	return nil
 }
 

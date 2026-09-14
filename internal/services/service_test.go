@@ -15,11 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func prepareService(store map[string][][]byte) *Service {
+func prepareService(store map[string][][]byte, qstore map[string][][]byte, mstore map[string][][]byte) *Service {
 	logger := logger.Init("debug")
 	repo := reptest.NewRepository(logger, store)
-	queue := qtest.NewQueue(logger)
-	minio := miniotest.NewS3Client("test", logger)
+	queue := qtest.NewQueue(logger, qstore)
+	minio := miniotest.NewS3Client("test", logger, mstore)
 
 	return New(
 		repo,
@@ -31,8 +31,10 @@ func prepareService(store map[string][][]byte) *Service {
 
 func TestCreateAvatar(t *testing.T) {
 	store := map[string][][]byte{}
+	qstore := map[string][][]byte{}
+	mstore := map[string][][]byte{}
 
-	service := prepareService(store)
+	service := prepareService(store, qstore, mstore)
 	ava, err := service.CreateAvatar(
 		t.Context(),
 		"test.jpg",
@@ -59,8 +61,10 @@ func TestCreateAvatar(t *testing.T) {
 
 func TestCreateTmpFile(t *testing.T) {
 	store := map[string][][]byte{}
+	qstore := map[string][][]byte{}
+	mstore := map[string][][]byte{}
 
-	service := prepareService(store)
+	service := prepareService(store, qstore, mstore)
 
 	f, err := os.Create("/tmp/src")
 	require.NoError(t, err)
@@ -78,4 +82,32 @@ func TestCreateTmpFile(t *testing.T) {
 
 	err = os.Remove(path)
 	require.NoError(t, err)
+}
+
+func TestSendUploadEvent(t *testing.T) {
+	store := map[string][][]byte{}
+	qstore := map[string][][]byte{}
+	mstore := map[string][][]byte{}
+
+	service := prepareService(store, qstore, mstore)
+
+	avaID := uuid.NewString()
+	userID := uuid.NewString()
+	s3Key := uuid.NewString()
+
+	err := service.SendUploadEvent(t.Context(), userID, avaID, s3Key)
+	require.NoError(t, err)
+
+	raw := qstore["uploads"][0]
+
+	assert.NotEmpty(t, raw)
+
+	var e models.AvatarUploadEvent
+
+	err = json.Unmarshal(raw, &e)
+	require.NoError(t, err)
+
+	assert.Equal(t, avaID, e.AvatarID)
+	assert.Equal(t, userID, e.UserID)
+	assert.Equal(t, s3Key, e.S3Key)
 }
