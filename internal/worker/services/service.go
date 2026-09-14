@@ -24,12 +24,12 @@ import (
 
 type Service struct {
 	logger *slog.Logger
-	queue  *queue.Queue
+	queue  queue.QueueInterface
 	repo   repositories.RepositoryInterface
-	s3Cli  *minio.S3Client
+	s3Cli  minio.S3ClientInterface
 }
 
-func NewService(logger *slog.Logger, q *queue.Queue, repo repositories.RepositoryInterface, s3Cli *minio.S3Client) *Service {
+func NewService(logger *slog.Logger, q queue.QueueInterface, repo repositories.RepositoryInterface, s3Cli minio.S3ClientInterface) *Service {
 	return &Service{
 		logger: logger,
 		queue:  q,

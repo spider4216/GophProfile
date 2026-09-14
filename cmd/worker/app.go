@@ -14,8 +14,8 @@ import (
 type app struct {
 	logger   *slog.Logger
 	cfg      *config.Config
-	queue    *queue.Queue
-	s3Client *minio.S3Client
+	queue    queue.QueueInterface
+	s3Client minio.S3ClientInterface
 	repo     repositories.RepositoryInterface
 }
 

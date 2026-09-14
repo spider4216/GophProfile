@@ -31,13 +31,13 @@ func main() {
 
 	for {
 		select {
-		case d := <-app.queue.UploadConsumer:
+		case d := <-app.queue.GetUploadConsumer():
 			app.logger.Debug("Consume upload...")
 			consume(ctx, d, handler.UploadAvatar, app.logger)
-		case d := <-app.queue.DeleteConsumer:
+		case d := <-app.queue.GetDeleteConsumer():
 			app.logger.Debug("Consume delete...")
 			consume(ctx, d, handler.DeleteAvatar, app.logger)
-		case d := <-app.queue.ProcessConsumer:
+		case d := <-app.queue.GetProcessConsumer():
 			app.logger.Debug("Consume process...")
 			consume(ctx, d, handler.ProcessAvatar, app.logger)
 		case <-ctx.Done():

@@ -18,8 +18,8 @@ type app struct {
 	logger   *slog.Logger
 	cfg      *config.Config
 	repo     repositories.RepositoryInterface
-	s3Client *minio.S3Client
-	queue    *queue.Queue
+	s3Client minio.S3ClientInterface
+	queue    queue.QueueInterface
 }
 
 func newApp() *app {

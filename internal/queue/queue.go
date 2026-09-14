@@ -29,9 +29,9 @@ type Queue struct {
 	uploadQueue     *amqp.Queue
 	processQueue    *amqp.Queue
 	deleteQueue     *amqp.Queue
-	UploadConsumer  <-chan amqp.Delivery
-	DeleteConsumer  <-chan amqp.Delivery
-	ProcessConsumer <-chan amqp.Delivery
+	uploadConsumer  <-chan amqp.Delivery
+	deleteConsumer  <-chan amqp.Delivery
+	processConsumer <-chan amqp.Delivery
 }
 
 func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
@@ -47,6 +47,16 @@ func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
 		logger: logger,
 		conn:   conn,
 	}, nil
+}
+
+func (q *Queue) GetUploadConsumer() <-chan amqp.Delivery {
+	return q.uploadConsumer
+}
+func (q *Queue) GetDeleteConsumer() <-chan amqp.Delivery {
+	return q.deleteConsumer
+}
+func (q *Queue) GetProcessConsumer() <-chan amqp.Delivery {
+	return q.processConsumer
 }
 
 func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent) error {
@@ -133,9 +143,9 @@ func (q *Queue) DeclareConsumers() error {
 		return fmt.Errorf("cannot declare process consumer: %w", err)
 	}
 
-	q.UploadConsumer = uplC
-	q.DeleteConsumer = delC
-	q.ProcessConsumer = proc
+	q.uploadConsumer = uplC
+	q.deleteConsumer = delC
+	q.processConsumer = proc
 
 	return nil
 }
