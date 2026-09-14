@@ -50,71 +50,51 @@ func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
 }
 
 func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent) error {
-	b, err := json.Marshal(e)
-	if err != nil {
-		return fmt.Errorf("cannot marshal upload event payload: %w", err)
-	}
-
 	ch, err := q.CreateCh()
+
 	if err != nil {
-		return fmt.Errorf("cannot create channel for upload publish: %w", err)
+		return fmt.Errorf("cannot create ch for upload event: %w", err)
 	}
 
-	return ch.PublishWithContext(
-		ctx,
-		exchange,           // exchange пока default
-		q.uploadQueue.Name, // routingKey
-		false,
-		false,
-		amqp.Publishing{
-			ContentType:  "application/json", // тип контента
-			Body:         b,                  // тело сообщения
-			DeliveryMode: amqp.Persistent,    // сообщение будет сохранено на диск
-		},
-	)
+	return sendEvent(ctx, e, q.uploadQueue.Name, ch)
 }
 
 // todo DRY
 func (q *Queue) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent) error {
-	b, err := json.Marshal(e)
-	if err != nil {
-		return fmt.Errorf("cannot marshal delete event payload: %w", err)
-	}
-
 	ch, err := q.CreateCh()
+
 	if err != nil {
-		return fmt.Errorf("cannot create channel for delete publish: %w", err)
+		return fmt.Errorf("cannot create ch for delete event: %w", err)
 	}
 
-	return ch.PublishWithContext(
-		ctx,
-		exchange,           // exchange пока default
-		q.deleteQueue.Name, // routingKey
-		false,
-		false,
-		amqp.Publishing{
-			Body:         b,               // тело сообщения
-			DeliveryMode: amqp.Persistent, // сообщение будет сохранено на диск
-		},
-	)
+	return sendEvent(ctx, e, q.deleteQueue.Name, ch)
 }
 
 // todo general func send event
 func (q *Queue) SendProcessEvent(ctx context.Context, e models.AvatarProcessEvent) error {
-	b, err := json.Marshal(e)
+	ch, err := q.CreateCh()
+
 	if err != nil {
-		return fmt.Errorf("cannot marshal process event payload: %w", err)
+		return fmt.Errorf("cannot create ch for process event: %w", err)
 	}
 
-	ch, err := q.CreateCh()
+	return sendEvent(ctx, e, q.processQueue.Name, ch)
+}
+
+func sendEvent[T any](ctx context.Context, e T, queue string, ch *amqp.Channel) error {
+	b, err := json.Marshal(e)
 	if err != nil {
-		return fmt.Errorf("cannot create channel for process publish: %w", err)
+		return fmt.Errorf("cannot marshal event payload: %w", err)
+	}
+
+	if err != nil {
+		return fmt.Errorf("cannot create channel for publish: %w", err)
 	}
 
 	return ch.PublishWithContext(
 		ctx,
-		exchange,            // exchange пока default
-		q.processQueue.Name, // routingKey
+		exchange, // exchange пока default
+		queue,    // routingKey
 		false,
 		false,
 		amqp.Publishing{
