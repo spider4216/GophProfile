@@ -59,7 +59,6 @@ func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent)
 	return sendEvent(ctx, e, q.uploadQueue.Name, ch)
 }
 
-// todo DRY
 func (q *Queue) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent) error {
 	ch, err := q.CreateCh()
 
@@ -70,7 +69,6 @@ func (q *Queue) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent)
 	return sendEvent(ctx, e, q.deleteQueue.Name, ch)
 }
 
-// todo general func send event
 func (q *Queue) SendProcessEvent(ctx context.Context, e models.AvatarProcessEvent) error {
 	ch, err := q.CreateCh()
 

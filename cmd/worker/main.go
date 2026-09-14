@@ -40,6 +40,8 @@ func main() {
 		case d := <-app.queue.ProcessConsumer:
 			app.logger.Debug("Consume process...")
 			consume(ctx, d, handler.ProcessAvatar, app.logger)
+		case <-ctx.Done():
+			os.Exit(1)
 		}
 	}
 }

@@ -169,10 +169,6 @@ func (s *Service) GetAvatarByID(ctx context.Context, ID string) (*models.Avatar,
 	return s.repo.GetAvatarByID(ctx, ID)
 }
 
-func (s *Service) GetUserAvatarByID(ctx context.Context, ID string, userID string) (*models.Avatar, error) {
-	return s.repo.GetUserAvatarByID(ctx, ID, userID)
-}
-
 func (s *Service) HashBinary(data []byte) string {
 	hash := sha256.Sum256(data)
 
