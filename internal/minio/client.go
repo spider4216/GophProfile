@@ -43,6 +43,28 @@ func NewS3Client(login string, pass string, host string, bucket string, logger *
 	}
 }
 
+func (s *S3Client) InitBucket() error {
+	_, err := s.cli.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(s.bucketName),
+	})
+
+	if err == nil {
+		return nil
+	}
+
+	s.logger.Debug("Creating bucket in minio")
+
+	_, err = s.cli.CreateBucket(&s3.CreateBucketInput{
+		Bucket: aws.String(s.bucketName),
+	})
+
+	if err != nil {
+		return fmt.Errorf("create bucket %q: %w", s.bucketName, err)
+	}
+
+	return nil
+}
+
 func (s *S3Client) Upload(ctx context.Context, key string, reader io.ReadSeeker, ctype string) error {
 	_, err := s.cli.PutObjectWithContext(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(s.bucketName),
