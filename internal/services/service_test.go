@@ -111,3 +111,42 @@ func TestSendUploadEvent(t *testing.T) {
 	assert.Equal(t, userID, e.UserID)
 	assert.Equal(t, s3Key, e.S3Key)
 }
+
+func TestSendDeleteEvents(t *testing.T) {
+	store := map[string][][]byte{}
+	qstore := map[string][][]byte{}
+	mstore := map[string][][]byte{}
+
+	service := prepareService(store, qstore, mstore)
+	id1 := uuid.NewString()
+	id2 := uuid.NewString()
+
+	avas := []models.Avatar{
+		{
+			ID: id1,
+		},
+		{
+			ID: id2,
+		},
+	}
+
+	err := service.SendDeleteEvents(t.Context(), avas)
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, len(qstore["deletes"]))
+
+	raw1 := qstore["deletes"][0]
+	raw2 := qstore["deletes"][1]
+
+	var e1 models.AvatarDeleteEvent
+	var e2 models.AvatarDeleteEvent
+
+	err = json.Unmarshal(raw1, &e1)
+	require.NoError(t, err)
+
+	err = json.Unmarshal(raw2, &e2)
+	require.NoError(t, err)
+
+	assert.Equal(t, id1, e1.AvatarID)
+	assert.Equal(t, id2, e2.AvatarID)
+}

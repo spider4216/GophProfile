@@ -34,6 +34,14 @@ func (q *QueueSlice) SendUploadEvent(ctx context.Context, e models.AvatarUploadE
 }
 
 func (q *QueueSlice) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent) error {
+	b, err := json.Marshal(e)
+
+	if err != nil {
+		return err
+	}
+
+	q.data["deletes"] = append(q.data["deletes"], b)
+
 	return nil
 }
 
