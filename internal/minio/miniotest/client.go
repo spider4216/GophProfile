@@ -1,0 +1,44 @@
+package miniotest
+
+import (
+	"context"
+	"errors"
+	"io"
+	"log/slog"
+)
+
+type S3ClientTest struct {
+	bucketName string
+	logger     *slog.Logger
+	data       map[string]map[string][]byte
+}
+
+func NewS3Client(bucket string, logger *slog.Logger, mstore map[string]map[string][]byte) *S3ClientTest {
+	return &S3ClientTest{
+		bucketName: bucket,
+		logger:     logger,
+		data:       mstore,
+	}
+}
+
+func (m *S3ClientTest) InitBucket() error {
+	return nil
+}
+
+func (m *S3ClientTest) Upload(ctx context.Context, key string, reader io.ReadSeeker, ctype string) error {
+	return nil
+}
+
+func (m *S3ClientTest) DeleteAva(ctx context.Context, key string) error {
+	return nil
+}
+
+func (m *S3ClientTest) Download(ctx context.Context, key string) ([]byte, error) {
+	b, ok := m.data[m.bucketName][key]
+
+	if !ok {
+		return nil, errors.New("value by key not found in bucket")
+	}
+
+	return b, nil
+}
