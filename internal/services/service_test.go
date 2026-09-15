@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func prepareService(store map[string][][]byte, qstore map[string][][]byte, mstore map[string][][]byte) *Service {
+func prepareService(store map[string][][]byte, qstore map[string][][]byte, mstore map[string]map[string][]byte) *Service {
 	logger := logger.Init("debug")
 	repo := reptest.NewRepository(logger, store)
 	queue := qtest.NewQueue(logger, qstore)
@@ -32,7 +32,8 @@ func prepareService(store map[string][][]byte, qstore map[string][][]byte, mstor
 func TestCreateAvatar(t *testing.T) {
 	store := map[string][][]byte{}
 	qstore := map[string][][]byte{}
-	mstore := map[string][][]byte{}
+	mstore := map[string]map[string][]byte{}
+	mstore["test"] = map[string][]byte{}
 
 	service := prepareService(store, qstore, mstore)
 	ava, err := service.CreateAvatar(
@@ -62,7 +63,8 @@ func TestCreateAvatar(t *testing.T) {
 func TestCreateTmpFile(t *testing.T) {
 	store := map[string][][]byte{}
 	qstore := map[string][][]byte{}
-	mstore := map[string][][]byte{}
+	mstore := map[string]map[string][]byte{}
+	mstore["test"] = map[string][]byte{}
 
 	service := prepareService(store, qstore, mstore)
 
@@ -87,7 +89,8 @@ func TestCreateTmpFile(t *testing.T) {
 func TestSendUploadEvent(t *testing.T) {
 	store := map[string][][]byte{}
 	qstore := map[string][][]byte{}
-	mstore := map[string][][]byte{}
+	mstore := map[string]map[string][]byte{}
+	mstore["test"] = map[string][]byte{}
 
 	service := prepareService(store, qstore, mstore)
 
@@ -115,7 +118,8 @@ func TestSendUploadEvent(t *testing.T) {
 func TestSendDeleteEvents(t *testing.T) {
 	store := map[string][][]byte{}
 	qstore := map[string][][]byte{}
-	mstore := map[string][][]byte{}
+	mstore := map[string]map[string][]byte{}
+	mstore["test"] = map[string][]byte{}
 
 	service := prepareService(store, qstore, mstore)
 	id1 := uuid.NewString()
@@ -149,4 +153,24 @@ func TestSendDeleteEvents(t *testing.T) {
 
 	assert.Equal(t, id1, e1.AvatarID)
 	assert.Equal(t, id2, e2.AvatarID)
+}
+
+func TestGetBinaryAva(t *testing.T) {
+	store := map[string][][]byte{}
+	qstore := map[string][][]byte{}
+	mstore := map[string]map[string][]byte{}
+	mstore["test"] = map[string][]byte{}
+
+	s3key := uuid.NewString()
+
+	data := []byte("Hello World")
+	// Кладем в minio слайс байт в бакет и ключ
+	mstore["test"][s3key] = data
+
+	service := prepareService(store, qstore, mstore)
+
+	b, err := service.GetBinaryAva(t.Context(), s3key)
+	require.NoError(t, err)
+
+	assert.Equal(t, data, b)
 }
