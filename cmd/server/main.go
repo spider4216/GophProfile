@@ -33,6 +33,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	mux.Handle("GET /", http.FileServer(http.Dir("./web")))
 	mux.Handle("GET /health", middleware.WithLogging(http.HandlerFunc(handler.Health)))
 	mux.Handle("POST /api/v1/avatars", middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.UploadAvatar))))
 	mux.Handle("GET /api/v1/avatars/{avatar_id}", middleware.WithLogging(http.HandlerFunc(handler.GetAvatar)))

@@ -15,4 +15,5 @@ WORKDIR /root/
 COPY --from=builder /app/server .
 COPY --from=builder /app/worker .
 COPY --from=builder /app/crt .
+COPY --from=builder /app/web ./web/
 RUN mkdir ./certs && ./crt

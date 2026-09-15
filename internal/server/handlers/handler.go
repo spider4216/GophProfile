@@ -36,7 +36,7 @@ func New(cfg *config.Config, logger *slog.Logger, service *services.Service) Han
 func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	file, header, err := r.FormFile("file")
+	file, header, err := r.FormFile("image")
 	if err != nil {
 		h.logger.Error("something wrong with file", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
