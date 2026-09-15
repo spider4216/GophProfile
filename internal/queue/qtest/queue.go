@@ -23,7 +23,6 @@ func NewQueue(logger *slog.Logger, store map[string][][]byte) *QueueSlice {
 
 func (q *QueueSlice) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent) error {
 	b, err := json.Marshal(e)
-
 	if err != nil {
 		return err
 	}
@@ -35,7 +34,6 @@ func (q *QueueSlice) SendUploadEvent(ctx context.Context, e models.AvatarUploadE
 
 func (q *QueueSlice) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent) error {
 	b, err := json.Marshal(e)
-
 	if err != nil {
 		return err
 	}
