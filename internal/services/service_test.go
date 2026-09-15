@@ -174,3 +174,34 @@ func TestGetBinaryAva(t *testing.T) {
 
 	assert.Equal(t, data, b)
 }
+
+func TestGetBinaryThumbnail(t *testing.T) {
+	store := map[string][][]byte{}
+	qstore := map[string][][]byte{}
+	mstore := map[string]map[string][]byte{}
+	mstore["test"] = map[string][]byte{}
+
+	thumbS3key := uuid.NewString()
+
+	data := []byte("Hello Thumbnail")
+	// Кладем в minio слайс байт в бакет и ключ - это будет гаш thumbnail
+	mstore["test"][thumbS3key] = data
+
+	service := prepareService(store, qstore, mstore)
+
+	avaID := uuid.NewString()
+	ava := models.Avatar{
+		ID: avaID,
+		ThumbnailS3Keys: map[string]string{
+			"100x100": thumbS3key,
+		},
+	}
+
+	b, err := service.GetBinaryThumbnail(t.Context(), &ava, "100x100")
+	require.NoError(t, err)
+	assert.Equal(t, data, b)
+
+	b, err = service.GetBinaryThumbnail(t.Context(), &ava, "300x300")
+	assert.Error(t, err)
+	assert.Nil(t, b)
+}
