@@ -3,12 +3,20 @@ package queue
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/spider4216/GophProfile/internal/models"
 )
+
+type NoConfirmErr struct{}
+
+func (err NoConfirmErr) Error() string {
+	return "cannot confirm publish in queue"
+}
 
 type queueName string
 
@@ -112,12 +120,17 @@ func sendEvent[T any](ctx context.Context, e T, queue string, ch *amqp.Channel) 
 		return fmt.Errorf("cannot marshal event payload: %w", err)
 	}
 
-	if err != nil {
-		return fmt.Errorf("cannot create channel for publish: %w", err)
+	if err := ch.Confirm(false); err != nil {
+		return fmt.Errorf("cannot enable publisher confirms: %w", err)
 	}
 
-	return ch.PublishWithContext(
-		ctx,
+	confirms := ch.NotifyPublish(make(chan amqp.Confirmation, 1))
+
+	publishCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	err = ch.PublishWithContext(
+		publishCtx,
 		exchange, // exchange пока default
 		queue,    // routingKey
 		false,
@@ -127,6 +140,21 @@ func sendEvent[T any](ctx context.Context, e T, queue string, ch *amqp.Channel) 
 			DeliveryMode: amqp.Persistent, // сообщение будет сохранено на диск
 		},
 	)
+	if err != nil {
+		return fmt.Errorf("cannot publish in queue %s: %w", queue, err)
+	}
+
+	// На базовом уровне будем ждать подтверждения
+	select {
+	case c := <-confirms:
+		if c.Ack {
+			return nil
+		} else {
+			return NoConfirmErr{}
+		}
+	case <-ctx.Done():
+		return errors.New("context was canceled while publishing msg in queue")
+	}
 }
 
 func (q *Queue) DeclareConsumers() error {

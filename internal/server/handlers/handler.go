@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/enum"
+	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/server/models"
 	"github.com/spider4216/GophProfile/internal/services"
 )
@@ -82,6 +83,26 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.logger.Debug("Data", "filename", fileName, "size", fileSize, "mimetype", mimetype, "ID", ava.ID)
+	var confirmErr queue.NoConfirmErr
+
+	for {
+		err := h.service.SendUploadEvent(ctx, h.service.GetUserIdFromCtx(ctx), ava.ID, ava.S3Key)
+
+		// Если нет ошибки, то выходим
+		if err == nil {
+			break
+		}
+
+		// Если возникла ошибка не связанная с подтверждением, то выходим
+		// иначе это означает, что ошибка связана с не подтверждением
+		// приема сообщения брокером, то делается retry,
+		// т.е. производится повторная отправка
+		if !errors.As(err, &confirmErr) {
+			h.logger.Error("cannot send upload event", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
 
 	if err := h.service.SendUploadEvent(ctx, h.service.GetUserIdFromCtx(ctx), ava.ID, ava.S3Key); err != nil {
 		h.logger.Error("cannot send upload event", "error", err)
@@ -314,10 +335,25 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.SendDeleteEvent(ctx, ava.ID); err != nil {
-		h.logger.Error("cannot send evet fpr delete ava", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	var confirmErr queue.NoConfirmErr
+
+	for {
+		err := h.service.SendDeleteEvent(ctx, ava.ID)
+
+		// Если нет ошибки, то выходим
+		if err == nil {
+			break
+		}
+
+		// Если возникла ошибка не связанная с подтверждением, то выходим
+		// иначе это означает, что ошибка связана с не подтверждением
+		// приема сообщения брокером, то делается retry,
+		// т.е. производится повторная отправка
+		if !errors.As(err, &confirmErr) {
+			h.logger.Error("cannot send delete event", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -364,10 +400,25 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.SendDeleteEvents(ctx, avas); err != nil {
-		h.logger.Error("cannot send evet for delete avatars", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	var confirmErr queue.NoConfirmErr
+
+	for {
+		err := h.service.SendDeleteEvents(ctx, avas)
+
+		// Если нет ошибки, то выходим
+		if err == nil {
+			break
+		}
+
+		// Если возникла ошибка не связанная с подтверждением, то выходим
+		// иначе это означает, что ошибка связана с не подтверждением
+		// приема сообщения брокером, то делается retry,
+		// т.е. производится повторная отправка
+		if !errors.As(err, &confirmErr) {
+			h.logger.Error("cannot send delete event", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)

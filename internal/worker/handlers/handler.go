@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/models"
+	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/worker/services"
 )
 
@@ -30,7 +32,25 @@ func (h *Handler) UploadAvatar(ctx context.Context, e models.AvatarUploadEvent) 
 		return fmt.Errorf("cannot upload avatar: %w", err)
 	}
 
-	return h.service.SendProcessEvent(ctx, e.AvatarID)
+	var confirmErr queue.NoConfirmErr
+
+	for {
+		err := h.service.SendProcessEvent(ctx, e.AvatarID)
+		// Если нет ошибки, то выходим
+		if err != nil {
+			break
+		}
+
+		// Если возникла ошибка не связанная с подтверждением, то выходим
+		// иначе это означает, что ошибка связана с не подтверждением
+		// приема сообщения брокером, то делается retry,
+		// т.е. производится повторная отправка
+		if !errors.As(err, &confirmErr) {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (h *Handler) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent) error {

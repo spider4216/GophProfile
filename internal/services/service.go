@@ -111,7 +111,7 @@ func (s *Service) SendDeleteEvents(ctx context.Context, avas []models.Avatar) er
 		}
 
 		if err := s.queue.SendDeleteEvent(ctx, e); err != nil {
-			return fmt.Errorf("cannit send event to delete avatar")
+			return fmt.Errorf("cannit send event to delete avatar: %w", err)
 		}
 	}
 
