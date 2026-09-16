@@ -39,7 +39,7 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 
 	file, header, err := r.FormFile("image")
 	if err != nil {
-		h.logger.Error("something wrong with file", "error", err)
+		h.logger.Debug("something wrong with file", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -55,13 +55,13 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	mimetype := header.Header.Get("Content-Type")
 
 	if !slices.Contains(h.cfg.SupportImgExt, mimetype) {
-		h.logger.Error("file format is not valid", "provided", mimetype)
+		h.logger.Debug("file format is not valid", "provided", mimetype)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if fileSize > h.cfg.MaxImgSize {
-		h.logger.Error("file is too large", "provided", fileSize)
+		h.logger.Debug("file is too large", "provided", fileSize)
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
 		return
 	}
@@ -70,7 +70,7 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 
 	// Сохраняем во временной tmp, поскольку в minio будет загружать потребитель
 	if err := h.service.CreateTmpFile(ctx, fileName, file, uid); err != nil {
-		h.logger.Error("cannot put file to tmp", "error", err)
+		h.logger.Debug("cannot put file to tmp", "error", err)
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
 		return
 	}
@@ -140,7 +140,7 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	ava, err := h.service.GetAvatarByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Error("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err)
 
 			b, err := h.service.PrepareNotFoundResp()
 			if err != nil {
@@ -174,7 +174,7 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 			b, err := h.service.PrepareNotFoundResp()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				h.logger.Error("cannot marshal 404 resp")
+				h.logger.Error("cannot prepare not found resp")
 				return
 			}
 
@@ -215,7 +215,7 @@ func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
 	ava, err := h.service.GetAvatarByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Error("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -250,7 +250,7 @@ func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	ava, err := h.service.GetLatestActiveUserAvatar(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Error("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -265,7 +265,7 @@ func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Если аватара нет, то возвращаем ответ
 		if code == http.StatusNotFound {
-			h.logger.Error("avatar binary not found", "error", err)
+			h.logger.Debug("avatar binary not found", "error", err)
 			w.WriteHeader(code)
 			return
 		}
@@ -300,7 +300,7 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 	ava, err := h.service.GetAvatarByID(ctx, avaID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Error("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -316,7 +316,7 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 		b, err := h.service.PrepareForbiddenResp()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			h.logger.Error("cannot marshal forbidden resp")
+			h.logger.Error("cannot prepare forbidden resp")
 			return
 		}
 
@@ -390,19 +390,19 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(avas) <= 0 {
-		h.logger.Error("user avatars not found", "error", err)
+		h.logger.Debug("user avatars not found", "error", err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	for _, ava := range avas {
 		if ava.UserID != h.service.GetUserIdFromCtx(ctx) {
-			h.logger.Error("ava user id not match with request user id")
+			h.logger.Debug("ava user id not match with request user id")
 
 			b, err := h.service.PrepareForbiddenResp()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				h.logger.Error("cannot marshal forbidden resp")
+				h.logger.Error("cannot prepare forbidden resp")
 				return
 			}
 
@@ -455,7 +455,7 @@ func (h *Handler) GetUserAvatars(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(avas) <= 0 {
-		h.logger.Error("user avatars not found", "error", err)
+		h.logger.Debug("user avatars not found", "error", err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
