@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -29,6 +30,14 @@ func main() {
 
 	app.logger.Debug("Run consumers...")
 
+	app.runConsume(ctx, handler)
+
+	if err := app.shutdown(); err != nil {
+		app.logger.Warn("cannot shutdown correctly")
+	}
+}
+
+func (app *app) runConsume(ctx context.Context, handler *handlers.Handler) {
 	for {
 		select {
 		case d := <-app.queue.GetUploadConsumer():
@@ -41,9 +50,17 @@ func main() {
 			app.logger.Debug("Consume process...")
 			consume(ctx, d, handler.ProcessAvatar, app.logger)
 		case <-ctx.Done():
-			os.Exit(1)
+			return
 		}
 	}
+}
+
+func (app *app) shutdown() error {
+	if err := app.queue.ConnectClose(); err != nil {
+		return fmt.Errorf("cannot close queue connection")
+	}
+
+	return nil
 }
 
 func consume[T any](

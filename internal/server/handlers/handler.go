@@ -86,6 +86,7 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	var confirmErr queue.NoConfirmErr
 
 	for {
+		h.logger.Debug("Send upload event")
 		err := h.service.SendUploadEvent(ctx, h.service.GetUserIdFromCtx(ctx), ava.ID, ava.S3Key)
 
 		// Если нет ошибки, то выходим
@@ -102,12 +103,6 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	}
-
-	if err := h.service.SendUploadEvent(ctx, h.service.GetUserIdFromCtx(ctx), ava.ID, ava.S3Key); err != nil {
-		h.logger.Error("cannot send upload event", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 
 	url := path.Join("https://", h.cfg.ServerAddress, "/api/v1/avatars/", ava.ID)
