@@ -24,7 +24,7 @@ type S3Client struct {
 	logger     *slog.Logger
 }
 
-func NewS3Client(login string, pass string, host string, bucket string, logger *slog.Logger) *S3Client {
+func NewS3Client(login string, pass string, host string, bucket string, logger *slog.Logger) (*S3Client, error) {
 	s3Cfg := &aws.Config{
 		Region:           aws.String(region),
 		Endpoint:         aws.String(host),
@@ -33,14 +33,18 @@ func NewS3Client(login string, pass string, host string, bucket string, logger *
 		DisableSSL:       aws.Bool(!useSSL),
 	}
 
-	sess := session.Must(session.NewSession(s3Cfg))
+	sess, err := session.NewSession(s3Cfg)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create session: %w", err)
+	}
+
 	client := s3.New(sess)
 
 	return &S3Client{
 		cli:        client,
 		bucketName: bucket,
 		logger:     logger,
-	}
+	}, nil
 }
 
 func (s *S3Client) InitBucket() error {
