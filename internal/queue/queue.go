@@ -49,7 +49,7 @@ func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
 		return nil, err
 	}
 
-	logger.Debug("connected to rabbitmq", "dsn", dsn)
+	logger.Debug("connected to rabbitmq")
 
 	return &Queue{
 		logger: logger,
