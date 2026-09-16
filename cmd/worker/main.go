@@ -73,15 +73,23 @@ func consume[T any](
 
 	if err := json.Unmarshal(delivery.Body, &event); err != nil {
 		logger.Error("Cannot unmarshall", "error", err)
+		if err := delivery.Nack(false, false); err != nil {
+			logger.Warn("cannot nack in consume")
+		}
+
 		return
 	}
 
 	if err := f(ctx, event); err != nil {
 		logger.Error("cannot consume", "error", err)
+
+		if err := delivery.Nack(false, false); err != nil {
+			logger.Warn("cannot nack in consume")
+		}
 		return
 	}
 
 	if err := delivery.Ack(false); err != nil {
-		logger.Warn("cannot ack in consume delete")
+		logger.Warn("cannot ack in consume")
 	}
 }
