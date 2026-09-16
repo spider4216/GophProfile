@@ -70,8 +70,8 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 
 	// Сохраняем во временной tmp, поскольку в minio будет загружать потребитель
 	if err := h.service.CreateTmpFile(ctx, fileName, file, uid); err != nil {
-		h.logger.Debug("cannot put file to tmp", "error", err)
-		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		h.logger.Error("cannot put file to tmp", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
