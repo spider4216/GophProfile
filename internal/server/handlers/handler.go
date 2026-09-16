@@ -400,6 +400,28 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for _, ava := range avas {
+		if ava.UserID != h.service.GetUserIdFromCtx(ctx) {
+			h.logger.Error("ava user id not match with request user id")
+
+			b, err := h.service.PrepareForbiddenResp()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				h.logger.Error("cannot marshal forbidden resp")
+				return
+			}
+
+			w.WriteHeader(http.StatusForbidden)
+
+			if _, err := w.Write(b); err != nil {
+				h.logger.Error("failed to write response", "error", err)
+				return
+			}
+
+			return
+		}
+	}
+
 	var confirmErr queue.NoConfirmErr
 
 	for {

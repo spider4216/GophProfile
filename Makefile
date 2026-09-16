@@ -38,3 +38,9 @@ fmt:
 
 test:
 	go test -v ./...
+
+logs-app:
+	docker compose logs app -f
+
+logs-worker:
+	docker compose logs worker -f
