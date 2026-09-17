@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"image/jpeg"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -15,11 +16,17 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/google/uuid"
 	"github.com/spider4216/GophProfile/internal/enum"
-	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"golang.org/x/sync/errgroup"
 )
+
+type S3Client interface {
+	InitBucket() error
+	Upload(ctx context.Context, key string, reader io.ReadSeeker, ctype string) error
+	DeleteAva(ctx context.Context, key string) error
+	Download(ctx context.Context, key string) ([]byte, error)
+}
 
 type Repository interface {
 	GetAvatarByID(ctx context.Context, ID string) (*models.Avatar, error)
@@ -32,10 +39,10 @@ type Service struct {
 	logger *slog.Logger
 	queue  queue.QueueInterface
 	repo   Repository
-	s3Cli  minio.S3ClientInterface
+	s3Cli  S3Client
 }
 
-func NewService(logger *slog.Logger, q queue.QueueInterface, repo Repository, s3Cli minio.S3ClientInterface) *Service {
+func NewService(logger *slog.Logger, q queue.QueueInterface, repo Repository, s3Cli S3Client) *Service {
 	return &Service{
 		logger: logger,
 		queue:  q,

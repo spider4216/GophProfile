@@ -16,7 +16,7 @@ type app struct {
 	logger   *slog.Logger
 	cfg      *config.Config
 	queue    queue.QueueInterface
-	s3Client minio.S3ClientInterface
+	s3Client services.S3Client
 	repo     services.Repository
 }
 
@@ -91,7 +91,7 @@ func (a *app) initLogger() error {
 func (a *app) initMinio() error {
 	cli, err := minio.NewS3Client(a.cfg.MinioUser, a.cfg.MinioPass, a.cfg.MinioHost, a.cfg.BucketName, a.logger)
 	if err != nil {
-		fmt.Errorf("cannot create s3 client: %w", err)
+		return fmt.Errorf("cannot create s3 client: %w", err)
 	}
 
 	a.s3Client = cli

@@ -14,11 +14,15 @@ import (
 	"strings"
 
 	"github.com/spider4216/GophProfile/internal/enum"
-	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue"
 	srvModel "github.com/spider4216/GophProfile/internal/server/models"
 )
+
+type S3Client interface {
+	InitBucket() error
+	Download(ctx context.Context, key string) ([]byte, error)
+}
 
 type Repository interface {
 	Ping(ctx context.Context) error
@@ -32,10 +36,10 @@ type Service struct {
 	repo   Repository
 	logger *slog.Logger
 	queue  queue.QueueInterface
-	s3Cli  minio.S3ClientInterface
+	s3Cli  S3Client
 }
 
-func New(repo Repository, logger *slog.Logger, queue queue.QueueInterface, s3Cli minio.S3ClientInterface) *Service {
+func New(repo Repository, logger *slog.Logger, queue queue.QueueInterface, s3Cli S3Client) *Service {
 	return &Service{
 		repo:   repo,
 		logger: logger,

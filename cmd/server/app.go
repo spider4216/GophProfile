@@ -19,7 +19,7 @@ type app struct {
 	logger   *slog.Logger
 	cfg      *config.Config
 	repo     services.Repository
-	s3Client minio.S3ClientInterface
+	s3Client services.S3Client
 	queue    queue.QueueInterface
 }
 
