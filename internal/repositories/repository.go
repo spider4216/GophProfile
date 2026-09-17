@@ -14,6 +14,12 @@ import (
 	"github.com/spider4216/GophProfile/internal/models"
 )
 
+type Querier interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
 type Repository struct {
 	con    *sql.DB
 	logger *slog.Logger
@@ -82,10 +88,14 @@ func (repo *Repository) UpdateAvatarUplStatus(ctx context.Context, ID string, st
 	return nil
 }
 
-func (repo *Repository) UpdateThumbnails(ctx context.Context, ID string, thumbnails []byte) error {
+func (repo *Repository) UpdateThumbnailsTx(ctx context.Context, tx *sql.Tx, ID string, thumbnails []byte) error {
+	return repo.updateThumbnails(ctx, tx, ID, thumbnails)
+}
+
+func (repo *Repository) updateThumbnails(ctx context.Context, db Querier, ID string, thumbnails []byte) error {
 	sql := "UPDATE avatars SET thumbnail_s3_keys=$1 WHERE id=$2"
 
-	_, err := repo.con.ExecContext(ctx, sql, thumbnails, ID)
+	_, err := db.ExecContext(ctx, sql, thumbnails, ID)
 	if err != nil {
 		return err
 	}
@@ -93,10 +103,14 @@ func (repo *Repository) UpdateThumbnails(ctx context.Context, ID string, thumbna
 	return nil
 }
 
-func (repo *Repository) UpdateAvatarProcStatus(ctx context.Context, ID string, status enum.ProcStatus) error {
+func (repo *Repository) UpdateAvatarProcStatusTx(ctx context.Context, tx *sql.Tx, ID string, status enum.ProcStatus) error {
+	return repo.updateAvatarProcStatus(ctx, tx, ID, status)
+}
+
+func (repo *Repository) updateAvatarProcStatus(ctx context.Context, db Querier, ID string, status enum.ProcStatus) error {
 	sql := "UPDATE avatars SET processing_status=$1 WHERE id=$2"
 
-	_, err := repo.con.ExecContext(ctx, sql, status, ID)
+	_, err := db.ExecContext(ctx, sql, status, ID)
 	if err != nil {
 		return err
 	}
@@ -116,12 +130,12 @@ func (repo *Repository) CommitProcess(ctx context.Context, avatarID string, thum
 		}
 	}()
 
-	if err := repo.UpdateThumbnails(ctx, avatarID, thumbBytes); err != nil {
+	if err := repo.UpdateThumbnailsTx(ctx, tx, avatarID, thumbBytes); err != nil {
 		return fmt.Errorf("cannot update avatar for thumbnails: %w", err)
 	}
 
 	// Изменить статус
-	if err := repo.UpdateAvatarProcStatus(ctx, avatarID, enum.ProcDone); err != nil {
+	if err := repo.UpdateAvatarProcStatusTx(ctx, tx, avatarID, enum.ProcDone); err != nil {
 		return fmt.Errorf("cannot update status on avatar: %w", err)
 	}
 

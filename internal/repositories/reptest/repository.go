@@ -2,6 +2,7 @@ package reptest
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log/slog"
 
@@ -47,11 +48,11 @@ func (r *SliceRepository) UpdateAvatarUplStatus(ctx context.Context, ID string, 
 	return nil
 }
 
-func (r *SliceRepository) UpdateAvatarProcStatus(ctx context.Context, ID string, status enum.ProcStatus) error {
+func (r *SliceRepository) UpdateAvatarProcStatusTx(ctx context.Context, tx *sql.Tx, ID string, status enum.ProcStatus) error {
 	return nil
 }
 
-func (r *SliceRepository) UpdateThumbnails(ctx context.Context, ID string, thumbnails []byte) error {
+func (r *SliceRepository) UpdateThumbnailsTx(ctx context.Context, tx *sql.Tx, ID string, thumbnails []byte) error {
 	return nil
 }
 
