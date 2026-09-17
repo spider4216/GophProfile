@@ -19,17 +19,8 @@ type Repository struct {
 	logger *slog.Logger
 }
 
-func NewRepository(dsn string, logger *slog.Logger) (*Repository, error) {
-	db, err := sql.Open("pgx", dsn)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Repository{con: db, logger: logger}, nil
-}
-
-func (repo *Repository) Source() any {
-	return repo.con
+func NewRepository(con *sql.DB, logger *slog.Logger) *Repository {
+	return &Repository{con: con, logger: logger}
 }
 
 func (repo *Repository) Ping(ctx context.Context) error {

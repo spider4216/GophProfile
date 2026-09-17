@@ -20,6 +20,7 @@ type app struct {
 	repo     *repositories.Repository
 	s3Client *minio.S3Client
 	queue    *queue.Queue
+	db       *sql.DB
 }
 
 func newApp() *app {
@@ -30,6 +31,7 @@ func (a *app) Run() error {
 	_, err := config.NewBuilder(a).
 		Step((*app).initConfig).
 		Step((*app).initLogger).
+		Step((*app).initDB).
 		Step((*app).initRepo).
 		Step((*app).initMigrations).
 		Step((*app).initQueue).
@@ -65,10 +67,7 @@ func (a *app) initLogger() error {
 }
 
 func (a *app) initRepo() error {
-	repo, err := repositories.NewRepository(a.cfg.DbDSN, a.logger)
-	if err != nil {
-		return err
-	}
+	repo := repositories.NewRepository(a.db, a.logger)
 
 	a.repo = repo
 
@@ -78,13 +77,7 @@ func (a *app) initRepo() error {
 func (a *app) initMigrations() error {
 	a.logger.Debug("Up migrations")
 
-	src, ok := a.repo.Source().(*sql.DB)
-
-	if !ok {
-		return fmt.Errorf("cannot cast to sql.DB type in init migration")
-	}
-
-	if err := migrations.Run(src); err != nil {
+	if err := migrations.Run(a.db); err != nil {
 		return err
 	}
 
@@ -121,4 +114,15 @@ func (a *app) initMinio() error {
 	a.s3Client = cli
 
 	return a.s3Client.InitBucket()
+}
+
+func (a *app) initDB() error {
+	db, err := sql.Open("pgx", a.cfg.DbDSN)
+	if err != nil {
+		return err
+	}
+
+	a.db = db
+
+	return nil
 }

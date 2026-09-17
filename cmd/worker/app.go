@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log/slog"
 
@@ -17,6 +18,7 @@ type app struct {
 	queue    *queue.Queue
 	s3Client *minio.S3Client
 	repo     *repositories.Repository
+	db       *sql.DB
 }
 
 func newApp() *app {
@@ -27,6 +29,7 @@ func (a *app) Run() error {
 	_, err := config.NewBuilder(a).
 		Step((*app).initConfig).
 		Step((*app).initLogger).
+		Step((*app).initDB).
 		Step((*app).initRepo).
 		Step((*app).initQueue).
 		Step((*app).initMinio).
@@ -99,12 +102,20 @@ func (a *app) initMinio() error {
 }
 
 func (a *app) initRepo() error {
-	repo, err := repositories.NewRepository(a.cfg.DbDSN, a.logger)
+	repo := repositories.NewRepository(a.db, a.logger)
+
+	a.repo = repo
+
+	return nil
+}
+
+func (a *app) initDB() error {
+	db, err := sql.Open("pgx", a.cfg.DbDSN)
 	if err != nil {
 		return err
 	}
 
-	a.repo = repo
+	a.db = db
 
 	return nil
 }

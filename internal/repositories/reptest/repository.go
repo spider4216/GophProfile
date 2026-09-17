@@ -26,10 +26,6 @@ func (r *SliceRepository) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (r *SliceRepository) Source() any {
-	return r.data
-}
-
 func (r *SliceRepository) CreateAvatar(ctx context.Context, ava models.Avatar) (string, error) {
 	ava.ID = uuid.NewString()
 
