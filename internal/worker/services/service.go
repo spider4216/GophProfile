@@ -81,7 +81,7 @@ func (s *Service) Upload(ctx context.Context, e models.AvatarUploadEvent) error 
 	}
 
 	if err := os.Remove("/tmp/" + filename); err != nil {
-		s.logger.Warn("cannot delete file from tmp", "error", err)
+		return fmt.Errorf("cannot remove tmp file: %w", err)
 	}
 
 	return nil

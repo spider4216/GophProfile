@@ -136,13 +136,11 @@ func (s *Service) SendDeleteEvents(ctx context.Context, avas []models.Avatar) er
 func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *models.Avatar) ([]byte, int, error) {
 	if size == "" {
 		if ava.UploadStatus != enum.Uploaded.String() {
-			s.logger.Error("avatar uploading... try again latter", "avaid", ava.ID)
 			return nil, http.StatusServiceUnavailable, errors.New("avatar uploading... try again latter")
 		}
 
 		b, err := s.GetBinaryAva(ctx, ava.S3Key)
 		if err != nil {
-			s.logger.Error("cannot download original avatar", "error", err)
 			return nil, http.StatusNotFound, fmt.Errorf("cannot download original avatar: %w", err)
 		}
 
@@ -150,15 +148,11 @@ func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *mod
 	}
 
 	if ava.ProcessingStatus != enum.ProcDone.String() {
-		s.logger.Error("avatar thumbnails processing... try again latter", "avaid", ava.ID)
-
 		return nil, http.StatusServiceUnavailable, errors.New("avatar thumbnails processing... try again latter")
 	}
 
 	b, err := s.GetBinaryThumbnail(ctx, ava, size)
 	if err != nil {
-		s.logger.Error("cannot download thumbnail avatar", "error", err)
-
 		return nil, http.StatusNotFound, fmt.Errorf("cannot download thumbnail avatar: %w", err)
 	}
 

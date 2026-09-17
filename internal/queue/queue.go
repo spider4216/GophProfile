@@ -45,7 +45,6 @@ type Queue struct {
 func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
 	conn, err := amqp.Dial(dsn)
 	if err != nil {
-		logger.Error("cannot connect to rabbit", "error", err)
 		return nil, err
 	}
 
