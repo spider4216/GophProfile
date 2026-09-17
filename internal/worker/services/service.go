@@ -17,9 +17,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/models"
-	"github.com/spider4216/GophProfile/internal/queue"
 	"golang.org/x/sync/errgroup"
 )
+
+type Queue interface {
+	SendProcessEvent(ctx context.Context, e models.AvatarProcessEvent) error
+}
 
 type S3Client interface {
 	InitBucket() error
@@ -37,12 +40,12 @@ type Repository interface {
 
 type Service struct {
 	logger *slog.Logger
-	queue  queue.QueueInterface
+	queue  Queue
 	repo   Repository
 	s3Cli  S3Client
 }
 
-func NewService(logger *slog.Logger, q queue.QueueInterface, repo Repository, s3Cli S3Client) *Service {
+func NewService(logger *slog.Logger, q Queue, repo Repository, s3Cli S3Client) *Service {
 	return &Service{
 		logger: logger,
 		queue:  q,

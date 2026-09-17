@@ -44,3 +44,9 @@ logs-app:
 
 logs-worker:
 	docker compose logs worker -f
+
+up:
+	docker compose up
+
+up-build:
+	docker compose up --build

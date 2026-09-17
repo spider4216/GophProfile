@@ -15,9 +15,13 @@ import (
 
 	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/models"
-	"github.com/spider4216/GophProfile/internal/queue"
 	srvModel "github.com/spider4216/GophProfile/internal/server/models"
 )
+
+type Queue interface {
+	SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent) error
+	SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent) error
+}
 
 type S3Client interface {
 	InitBucket() error
@@ -35,11 +39,11 @@ type Repository interface {
 type Service struct {
 	repo   Repository
 	logger *slog.Logger
-	queue  queue.QueueInterface
+	queue  Queue
 	s3Cli  S3Client
 }
 
-func New(repo Repository, logger *slog.Logger, queue queue.QueueInterface, s3Cli S3Client) *Service {
+func New(repo Repository, logger *slog.Logger, queue Queue, s3Cli S3Client) *Service {
 	return &Service{
 		repo:   repo,
 		logger: logger,

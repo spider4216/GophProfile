@@ -11,16 +11,15 @@ import (
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
-	"github.com/spider4216/GophProfile/internal/services"
 	"github.com/spider4216/GophProfile/migrations"
 )
 
 type app struct {
 	logger   *slog.Logger
 	cfg      *config.Config
-	repo     services.Repository
-	s3Client services.S3Client
-	queue    queue.QueueInterface
+	repo     *repositories.Repository
+	s3Client *minio.S3Client
+	queue    *queue.Queue
 }
 
 func newApp() *app {
@@ -79,13 +78,7 @@ func (a *app) initRepo() error {
 func (a *app) initMigrations() error {
 	a.logger.Debug("Up migrations")
 
-	repo, ok := a.repo.(*repositories.Repository)
-
-	if !ok {
-		return fmt.Errorf("cannot cast to pgx repository type in init migration")
-	}
-
-	src, ok := repo.Source().(*sql.DB)
+	src, ok := a.repo.Source().(*sql.DB)
 
 	if !ok {
 		return fmt.Errorf("cannot cast to sql.DB type in init migration")
