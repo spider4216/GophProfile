@@ -17,18 +17,25 @@ import (
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue"
-	"github.com/spider4216/GophProfile/internal/repositories"
 	srvModel "github.com/spider4216/GophProfile/internal/server/models"
 )
 
+type Repository interface {
+	Ping(ctx context.Context) error
+	CreateAvatar(ctx context.Context, ava models.Avatar) (string, error)
+	GetAvatarByID(ctx context.Context, ID string) (*models.Avatar, error)
+	GetLatestUserAvatar(ctx context.Context, userID string) (*models.Avatar, error)
+	GetUserAvatars(ctx context.Context, userID string) ([]models.Avatar, error)
+}
+
 type Service struct {
-	repo   repositories.RepositoryInterface
+	repo   Repository
 	logger *slog.Logger
 	queue  queue.QueueInterface
 	s3Cli  minio.S3ClientInterface
 }
 
-func New(repo repositories.RepositoryInterface, logger *slog.Logger, queue queue.QueueInterface, s3Cli minio.S3ClientInterface) *Service {
+func New(repo Repository, logger *slog.Logger, queue queue.QueueInterface, s3Cli minio.S3ClientInterface) *Service {
 	return &Service{
 		repo:   repo,
 		logger: logger,

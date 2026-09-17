@@ -9,6 +9,7 @@ import (
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
+	"github.com/spider4216/GophProfile/internal/worker/services"
 )
 
 type app struct {
@@ -16,7 +17,7 @@ type app struct {
 	cfg      *config.Config
 	queue    queue.QueueInterface
 	s3Client minio.S3ClientInterface
-	repo     repositories.RepositoryInterface
+	repo     services.Repository
 }
 
 func newApp() *app {

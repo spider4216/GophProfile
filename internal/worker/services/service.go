@@ -18,18 +18,24 @@ import (
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue"
-	"github.com/spider4216/GophProfile/internal/repositories"
 	"golang.org/x/sync/errgroup"
 )
+
+type Repository interface {
+	GetAvatarByID(ctx context.Context, ID string) (*models.Avatar, error)
+	UpdateAvatarUplStatus(ctx context.Context, ID string, status enum.UploadStatus) error
+	CommitProcess(ctx context.Context, avatarID string, thumbBytes []byte) error
+	DeleteAvatar(ctx context.Context, ID string) error
+}
 
 type Service struct {
 	logger *slog.Logger
 	queue  queue.QueueInterface
-	repo   repositories.RepositoryInterface
+	repo   Repository
 	s3Cli  minio.S3ClientInterface
 }
 
-func NewService(logger *slog.Logger, q queue.QueueInterface, repo repositories.RepositoryInterface, s3Cli minio.S3ClientInterface) *Service {
+func NewService(logger *slog.Logger, q queue.QueueInterface, repo Repository, s3Cli minio.S3ClientInterface) *Service {
 	return &Service{
 		logger: logger,
 		queue:  q,

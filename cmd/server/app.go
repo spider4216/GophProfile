@@ -11,13 +11,14 @@ import (
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
+	"github.com/spider4216/GophProfile/internal/services"
 	"github.com/spider4216/GophProfile/migrations"
 )
 
 type app struct {
 	logger   *slog.Logger
 	cfg      *config.Config
-	repo     repositories.RepositoryInterface
+	repo     services.Repository
 	s3Client minio.S3ClientInterface
 	queue    queue.QueueInterface
 }
