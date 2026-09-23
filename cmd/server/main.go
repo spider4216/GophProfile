@@ -6,9 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/spider4216/GophProfile/internal/server/handlers"
@@ -54,19 +52,21 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	defer stop()
+	defer app.ctxStop()
+	defer app.logShutdown()
 
 	go func() {
 		defer wg.Done()
 
 		app.logger.Debug("Graceful shutdown mode on")
-		<-ctx.Done()
+		<-app.ctx.Done()
 
 		// Тут тоже останавляваем перехват сигналов
-		stop()
+		app.ctxStop()
 
 		app.logger.Debug("Shutdown server...")
+
+		app.logShutdown()
 
 		ctxShutdown, cancel := context.WithTimeout(context.Background(), serverTimeout)
 		defer cancel()

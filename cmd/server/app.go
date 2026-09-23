@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
+	"os/signal"
+	"syscall"
 
 	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
@@ -15,12 +18,15 @@ import (
 )
 
 type app struct {
-	logger   *slog.Logger
-	cfg      *config.Config
-	repo     *repositories.Repository
-	s3Client *minio.S3Client
-	queue    *queue.Queue
-	db       *sql.DB
+	logger      *slog.Logger
+	cfg         *config.Config
+	repo        *repositories.Repository
+	s3Client    *minio.S3Client
+	queue       *queue.Queue
+	db          *sql.DB
+	ctx         context.Context
+	ctxStop     context.CancelFunc
+	logShutdown func()
 }
 
 func newApp() *app {
@@ -29,6 +35,7 @@ func newApp() *app {
 
 func (a *app) Run() error {
 	_, err := config.NewBuilder(a).
+		Step((*app).initCtx).
 		Step((*app).initConfig).
 		Step((*app).initLogger).
 		Step((*app).initDB).
@@ -59,9 +66,13 @@ func (a *app) initConfig() error {
 }
 
 func (a *app) initLogger() error {
-	logger := logger.Init(a.cfg.LogLvl)
+	logger, shutdown, err := logger.Init(a.ctx)
+	if err != nil {
+		return fmt.Errorf("cannot init logger: %w", err)
+	}
 
 	a.logger = logger
+	a.logShutdown = shutdown
 
 	return nil
 }
@@ -123,6 +134,14 @@ func (a *app) initDB() error {
 	}
 
 	a.db = db
+
+	return nil
+}
+
+func (a *app) initCtx() error {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	a.ctx = ctx
+	a.ctxStop = stop
 
 	return nil
 }

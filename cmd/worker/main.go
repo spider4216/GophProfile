@@ -6,9 +6,6 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/spider4216/GophProfile/internal/worker/handlers"
@@ -25,12 +22,12 @@ func main() {
 	service := services.NewService(app.logger, app.queue, app.repo, app.s3Client)
 	handler := handlers.NewHandler(app.logger, service, app.cfg)
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	defer app.ctxStop()
+	defer app.logShutdown()
 
 	app.logger.Debug("Run consumers...")
 
-	app.runConsume(ctx, handler)
+	app.runConsume(app.ctx, handler)
 
 	if err := app.shutdown(); err != nil {
 		app.logger.Warn("cannot shutdown correctly")
@@ -56,6 +53,8 @@ func (app *app) runConsume(ctx context.Context, handler *handlers.Handler) {
 }
 
 func (app *app) shutdown() error {
+	app.logShutdown()
+
 	if err := app.queue.ConnectClose(); err != nil {
 		return fmt.Errorf("cannot close queue connection")
 	}

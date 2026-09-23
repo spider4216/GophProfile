@@ -13,7 +13,6 @@ type Config struct {
 	WriteTimeout   time.Duration `env:"WRITE_TIMEOUT" envDefault:"10s"`
 	IdleTimeout    time.Duration `env:"IDLE_TIMEOUT" envDefault:"30s"`
 	PKPath         string        `env:"PK_PATH" envDefault:"certs/private.pem"` // Путь до приватного ключа для режимо HTTPS
-	LogLvl         string        `env:"LOG_LEVEL" envDefault:"debug"`           // Уровень логирования
 	CrtPath        string        `env:"CRT_PATH" envDefault:"certs/cert.pem"`   // Путь до сертификата для режимо HTTPS
 	SupportImgExt  []string      `env:"SUPPORT_IMG_EXT" envDefault:"image/jpeg,image/png,image/webp"`
 	MaxImgSize     int64         `env:"MAX_ING_SIZE" envDefault:"10485760"`
