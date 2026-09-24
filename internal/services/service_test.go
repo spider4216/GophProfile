@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/spider4216/GophProfile/internal/meter/metertest"
 	"github.com/spider4216/GophProfile/internal/minio/miniotest"
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue/qtest"
@@ -21,12 +22,14 @@ func prepareService(store map[string][][]byte, qstore map[string][][]byte, mstor
 	repo := reptest.NewRepository(logger, store)
 	queue := qtest.NewQueue(logger, qstore)
 	minio := miniotest.NewS3Client("test", logger, mstore)
+	meter := metertest.NewMeter()
 
 	return New(
 		repo,
 		logger,
 		queue,
 		minio,
+		meter,
 	)
 }
 

@@ -36,19 +36,25 @@ type Repository interface {
 	GetUserAvatars(ctx context.Context, userID string) ([]models.Avatar, error)
 }
 
+type Meter interface {
+	Count(ctx context.Context, name string, desc string, t string) error
+}
+
 type Service struct {
 	repo   Repository
 	logger *slog.Logger
 	queue  Queue
 	s3Cli  S3Client
+	meter  Meter
 }
 
-func New(repo Repository, logger *slog.Logger, queue Queue, s3Cli S3Client) *Service {
+func New(repo Repository, logger *slog.Logger, queue Queue, s3Cli S3Client, meter Meter) *Service {
 	return &Service{
 		repo:   repo,
 		logger: logger,
 		queue:  queue,
 		s3Cli:  s3Cli,
+		meter:  meter,
 	}
 }
 
@@ -106,6 +112,8 @@ func (s *Service) SendUploadEvent(ctx context.Context, userID string, avaID stri
 		UserID:   userID,
 		S3Key:    s3k,
 	}
+
+	s.meter.Count(ctx, "upload_event", "Count of sent events", "send")
 
 	return s.queue.SendUploadEvent(ctx, e)
 }

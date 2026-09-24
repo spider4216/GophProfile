@@ -11,6 +11,7 @@ import (
 
 	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
+	"github.com/spider4216/GophProfile/internal/meter"
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
@@ -18,15 +19,17 @@ import (
 )
 
 type app struct {
-	logger      *slog.Logger
-	cfg         *config.Config
-	repo        *repositories.Repository
-	s3Client    *minio.S3Client
-	queue       *queue.Queue
-	db          *sql.DB
-	ctx         context.Context
-	ctxStop     context.CancelFunc
-	logShutdown func()
+	logger        *slog.Logger
+	cfg           *config.Config
+	repo          *repositories.Repository
+	s3Client      *minio.S3Client
+	queue         *queue.Queue
+	db            *sql.DB
+	ctx           context.Context
+	ctxStop       context.CancelFunc
+	logShutdown   func()
+	meter         *meter.Meter
+	meterShutdown func()
 }
 
 func newApp() *app {
@@ -38,6 +41,7 @@ func (a *app) Run() error {
 		Step((*app).initCtx).
 		Step((*app).initConfig).
 		Step((*app).initLogger).
+		Step((*app).initMeter).
 		Step((*app).initDB).
 		Step((*app).initRepo).
 		Step((*app).initMigrations).
@@ -142,6 +146,20 @@ func (a *app) initCtx() error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	a.ctx = ctx
 	a.ctxStop = stop
+
+	return nil
+}
+
+func (a *app) initMeter() error {
+	m := meter.NewMeter()
+	f, err := m.Init(a.ctx)
+
+	if err != nil {
+		return fmt.Errorf("cannot init meter: %w", err)
+	}
+
+	a.meter = m
+	a.meterShutdown = f
 
 	return nil
 }
