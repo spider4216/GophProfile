@@ -138,6 +138,15 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+  
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - '9090:9090'
+
 
 volumes:
   rabbitmq_data:
