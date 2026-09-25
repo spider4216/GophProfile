@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -18,24 +19,36 @@ import (
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/server/models"
 	"github.com/spider4216/GophProfile/internal/services"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
+
+type Tracer interface {
+	Start(ctx context.Context, name string) (context.Context, trace.Span)
+}
 
 type Handler struct {
 	cfg     *config.Config
 	logger  *slog.Logger
 	service *services.Service
+	tracer  Tracer
 }
 
-func New(cfg *config.Config, logger *slog.Logger, service *services.Service) Handler {
+func New(cfg *config.Config, logger *slog.Logger, service *services.Service, tracer Tracer) Handler {
 	return Handler{
 		cfg:     cfg,
 		logger:  logger,
 		service: service,
+		tracer:  tracer,
 	}
 }
 
 func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	ctx, span := h.tracer.Start(ctx, "UploadAvatar")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
 
 	file, header, err := r.FormFile("image")
 	if err != nil {

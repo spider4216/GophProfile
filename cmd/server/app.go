@@ -15,21 +15,24 @@ import (
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
+	"github.com/spider4216/GophProfile/internal/tracer"
 	"github.com/spider4216/GophProfile/migrations"
 )
 
 type app struct {
-	logger        *slog.Logger
-	cfg           *config.Config
-	repo          *repositories.Repository
-	s3Client      *minio.S3Client
-	queue         *queue.Queue
-	db            *sql.DB
-	ctx           context.Context
-	ctxStop       context.CancelFunc
-	logShutdown   func()
-	meter         *meter.Meter
-	meterShutdown func()
+	logger         *slog.Logger
+	cfg            *config.Config
+	repo           *repositories.Repository
+	s3Client       *minio.S3Client
+	queue          *queue.Queue
+	db             *sql.DB
+	ctx            context.Context
+	ctxStop        context.CancelFunc
+	logShutdown    func()
+	meter          *meter.Meter
+	meterShutdown  func()
+	tracer         *tracer.Tracer
+	tracerShutdown func()
 }
 
 func newApp() *app {
@@ -40,6 +43,7 @@ func (a *app) Run() error {
 	_, err := config.NewBuilder(a).
 		Step((*app).initCtx).
 		Step((*app).initConfig).
+		Step((*app).initTracer).
 		Step((*app).initLogger).
 		Step((*app).initMeter).
 		Step((*app).initDB).
@@ -160,6 +164,20 @@ func (a *app) initMeter() error {
 
 	a.meter = m
 	a.meterShutdown = f
+
+	return nil
+}
+
+func (a *app) initTracer() error {
+	t := tracer.NewTracer()
+	f, err := t.Init(a.ctx)
+
+	if err != nil {
+		return fmt.Errorf("cannot init tracer: %w", err)
+	}
+
+	a.tracer = t
+	a.tracerShutdown = f
 
 	return nil
 }

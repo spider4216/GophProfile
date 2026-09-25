@@ -28,7 +28,7 @@ func main() {
 
 	service := services.New(app.repo, app.logger, app.queue, app.s3Client, app.meter)
 	middleware := middlewares.New(app.logger, app.cfg, service)
-	handler := handlers.New(app.cfg, app.logger, service)
+	handler := handlers.New(app.cfg, app.logger, service, app.tracer)
 
 	mux := http.NewServeMux()
 
