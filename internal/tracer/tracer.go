@@ -25,7 +25,6 @@ func NewTracer() *Tracer {
 func (t *Tracer) Init(ctx context.Context, serviceName string) (func(), error) {
 	// Создаём gRPC Exporter (порт 4317)
 	exporter, err := otlptracegrpc.New(ctx)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
 	}

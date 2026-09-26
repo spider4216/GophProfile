@@ -113,7 +113,9 @@ func (s *Service) SendUploadEvent(ctx context.Context, userID string, avaID stri
 		S3Key:    s3k,
 	}
 
-	s.meter.Count(ctx, "upload_event", "Count of sent events", "send")
+	if err := s.meter.Count(ctx, "upload_event", "Count of sent events", "send"); err != nil {
+		return fmt.Errorf("cannot set upload metric: %w", err)
+	}
 
 	return s.queue.SendUploadEvent(ctx, e)
 }

@@ -29,7 +29,6 @@ func (m *Meter) Init(ctx context.Context, serviceName string, metricName string)
 		ctx,
 		otlpmetrichttp.WithInsecure(),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OTLP exporter: %w", err)
 	}
@@ -46,6 +45,9 @@ func (m *Meter) Init(ctx context.Context, serviceName string, metricName string)
 			attribute.String("environment", os.Getenv("GO_ENV")),
 		),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create metric resource: %w", err)
+	}
 
 	// Инициализируем MeterProvider
 	meterProvider := metric.NewMeterProvider(
@@ -79,7 +81,6 @@ func (m *Meter) Count(ctx context.Context, name string, desc string, t string) e
 		name,
 		ometric.WithDescription(desc),
 	)
-
 	if err != nil {
 		return fmt.Errorf("cannot create counter: %w", err)
 	}

@@ -2,8 +2,7 @@ package metertest
 
 import "context"
 
-type Meter struct {
-}
+type Meter struct{}
 
 func NewMeter() *Meter {
 	return &Meter{}
