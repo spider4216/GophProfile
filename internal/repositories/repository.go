@@ -12,6 +12,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/models"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Querier interface {
@@ -20,13 +22,18 @@ type Querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
+type Tracer interface {
+	Start(ctx context.Context, name string) (context.Context, trace.Span)
+}
+
 type Repository struct {
 	con    *sql.DB
 	logger *slog.Logger
+	tracer Tracer
 }
 
-func NewRepository(con *sql.DB, logger *slog.Logger) *Repository {
-	return &Repository{con: con, logger: logger}
+func NewRepository(con *sql.DB, logger *slog.Logger, tracer Tracer) *Repository {
+	return &Repository{con: con, logger: logger, tracer: tracer}
 }
 
 func (repo *Repository) Ping(ctx context.Context) error {
@@ -35,6 +42,11 @@ func (repo *Repository) Ping(ctx context.Context) error {
 
 func (repo *Repository) CreateAvatar(ctx context.Context, ava models.Avatar) (string, error) {
 	sql := "INSERT INTO avatars (user_id,file_name,mime_type,size_bytes,s3_key) VALUES ($1,$2,$3,$4,$5) RETURNING id"
+
+	ctx, span := repo.tracer.Start(ctx, "CreateMetadataAvatarDB")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
+
 	var lastInsertId string
 
 	err := repo.con.QueryRowContext(ctx, sql, ava.UserID, ava.FileName, ava.MimeType, ava.SizeBytes, ava.S3Key).Scan(&lastInsertId)

@@ -10,6 +10,8 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/spider4216/GophProfile/internal/models"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type NoConfirmErr struct{}
@@ -31,6 +33,10 @@ const (
 	exchange         string    = "events"
 )
 
+type Tracer interface {
+	Start(ctx context.Context, name string) (context.Context, trace.Span)
+}
+
 type Queue struct {
 	conn            *amqp.Connection
 	logger          *slog.Logger
@@ -40,9 +46,10 @@ type Queue struct {
 	uploadConsumer  <-chan amqp.Delivery
 	deleteConsumer  <-chan amqp.Delivery
 	processConsumer <-chan amqp.Delivery
+	tracer          Tracer
 }
 
-func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
+func NewQueue(dsn string, logger *slog.Logger, tracer Tracer) (*Queue, error) {
 	conn, err := amqp.Dial(dsn)
 	if err != nil {
 		return nil, err
@@ -53,6 +60,7 @@ func NewQueue(dsn string, logger *slog.Logger) (*Queue, error) {
 	return &Queue{
 		logger: logger,
 		conn:   conn,
+		tracer: tracer,
 	}, nil
 }
 
@@ -79,6 +87,10 @@ func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent)
 			q.logger.Warn("cannot close channel", "error", err)
 		}
 	}()
+
+	ctx, span := q.tracer.Start(ctx, "SendToQueue")
+	defer span.End()
+	span.SetAttributes(attribute.String("queue", q.uploadQueue.Name))
 
 	return sendEvent(ctx, e, q.uploadQueue.Name, ch)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue/qtest"
 	"github.com/spider4216/GophProfile/internal/repositories/reptest"
+	"github.com/spider4216/GophProfile/internal/tracer/tracertest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,6 +24,7 @@ func prepareService(store map[string][][]byte, qstore map[string][][]byte, mstor
 	queue := qtest.NewQueue(logger, qstore)
 	minio := miniotest.NewS3Client("test", logger, mstore)
 	meter := metertest.NewMeter()
+	tracer := tracertest.NewTracer()
 
 	return New(
 		repo,
@@ -30,6 +32,7 @@ func prepareService(store map[string][][]byte, qstore map[string][][]byte, mstor
 		queue,
 		minio,
 		meter,
+		tracer,
 	)
 }
 

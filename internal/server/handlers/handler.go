@@ -49,17 +49,18 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx, span := h.tracer.Start(ctx, "UploadAvatar")
 	defer span.End()
 	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
+	sc := trace.SpanContextFromContext(ctx)
 
 	file, header, err := r.FormFile("image")
 	if err != nil {
-		h.logger.Debug("something wrong with file", "error", err)
+		h.logger.Debug("something wrong with file", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	defer func() {
 		if err := file.Close(); err != nil {
-			h.logger.Warn("cannot file close", "error", err)
+			h.logger.Warn("cannot file close", "error", err, "trace_id", sc.TraceID())
 		}
 	}()
 
@@ -68,13 +69,13 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	mimetype := header.Header.Get("Content-Type")
 
 	if !slices.Contains(h.cfg.SupportImgExt, mimetype) {
-		h.logger.Debug("file format is not valid", "provided", mimetype)
+		h.logger.Debug("file format is not valid", "provided", mimetype, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if fileSize > h.cfg.MaxImgSize {
-		h.logger.Debug("file is too large", "provided", fileSize)
+		h.logger.Debug("file is too large", "provided", fileSize, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
 		return
 	}
@@ -83,23 +84,23 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 
 	// Сохраняем во временной tmp, поскольку в minio будет загружать потребитель
 	if err := h.service.CreateTmpFile(ctx, fileName, file, uid); err != nil {
-		h.logger.Error("cannot put file to tmp", "error", err)
+		h.logger.Error("cannot put file to tmp", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	ava, err := h.service.CreateAvatar(ctx, fileName, mimetype, fileSize, uid)
 	if err != nil {
-		h.logger.Error("cannot create avatar", "error", err)
+		h.logger.Error("cannot create avatar", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Debug("Data", "filename", fileName, "size", fileSize, "mimetype", mimetype, "ID", ava.ID)
+	h.logger.Debug("Data", "filename", fileName, "size", fileSize, "mimetype", mimetype, "ID", ava.ID, "trace_id", sc.TraceID())
 	var confirmErr queue.NoConfirmErr
 
 	for {
-		h.logger.Debug("Send upload event")
+		h.logger.Debug("Send upload event", "trace_id", sc.TraceID())
 		err := h.service.SendUploadEvent(ctx, h.service.GetUserIdFromCtx(ctx), ava.ID, ava.S3Key)
 
 		// Если нет ошибки, то выходим
@@ -112,7 +113,7 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 		// приема сообщения брокером, то делается retry,
 		// т.е. производится повторная отправка
 		if !errors.As(err, &confirmErr) {
-			h.logger.Error("cannot send upload event", "error", err)
+			h.logger.Error("cannot send upload event", "error", err, "trace_id", sc.TraceID())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -130,7 +131,7 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(resp)
 	if err != nil {
-		h.logger.Error("cannot marshal response", "error", err)
+		h.logger.Error("cannot marshal response", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -138,7 +139,7 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	if _, err := w.Write(b); err != nil {
-		h.logger.Error("failed to write response", "error", err)
+		h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID())
 		return
 	}
 }

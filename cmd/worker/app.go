@@ -14,18 +14,21 @@ import (
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
+	"github.com/spider4216/GophProfile/internal/tracer"
 )
 
 type app struct {
-	logger      *slog.Logger
-	cfg         *config.Config
-	queue       *queue.Queue
-	s3Client    *minio.S3Client
-	repo        *repositories.Repository
-	db          *sql.DB
-	ctx         context.Context
-	ctxStop     context.CancelFunc
-	logShutdown func()
+	logger         *slog.Logger
+	cfg            *config.Config
+	queue          *queue.Queue
+	s3Client       *minio.S3Client
+	repo           *repositories.Repository
+	db             *sql.DB
+	ctx            context.Context
+	ctxStop        context.CancelFunc
+	logShutdown    func()
+	tracer         *tracer.Tracer
+	tracerShutdown func()
 }
 
 func newApp() *app {
@@ -36,6 +39,7 @@ func (a *app) Run() error {
 	_, err := config.NewBuilder(a).
 		Step((*app).initCtx).
 		Step((*app).initConfig).
+		Step((*app).initTracer).
 		Step((*app).initLogger).
 		Step((*app).initDB).
 		Step((*app).initRepo).
@@ -47,7 +51,7 @@ func (a *app) Run() error {
 }
 
 func (a *app) initQueue() error {
-	q, err := queue.NewQueue(a.cfg.RabbitDSN, a.logger)
+	q, err := queue.NewQueue(a.cfg.RabbitDSN, a.logger, a.tracer)
 	if err != nil {
 		return fmt.Errorf("cannot init queue: %w", err)
 	}
@@ -114,7 +118,7 @@ func (a *app) initMinio() error {
 }
 
 func (a *app) initRepo() error {
-	repo := repositories.NewRepository(a.db, a.logger)
+	repo := repositories.NewRepository(a.db, a.logger, a.tracer)
 
 	a.repo = repo
 
@@ -136,6 +140,19 @@ func (a *app) initCtx() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	a.ctx = ctx
 	a.ctxStop = stop
+
+	return nil
+}
+
+func (a *app) initTracer() error {
+	t := tracer.NewTracer()
+	f, err := t.Init(a.ctx, a.cfg.ServiceName)
+	if err != nil {
+		return fmt.Errorf("cannot init tracer: %w", err)
+	}
+
+	a.tracer = t
+	a.tracerShutdown = f
 
 	return nil
 }

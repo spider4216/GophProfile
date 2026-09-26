@@ -26,7 +26,7 @@ func main() {
 		log.Fatal("Cannot run app", err)
 	}
 
-	service := services.New(app.repo, app.logger, app.queue, app.s3Client, app.meter)
+	service := services.New(app.repo, app.logger, app.queue, app.s3Client, app.meter, app.tracer)
 	middleware := middlewares.New(app.logger, app.cfg, service)
 	handler := handlers.New(app.cfg, app.logger, service, app.tracer)
 

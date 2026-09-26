@@ -86,7 +86,7 @@ func (a *app) initLogger() error {
 }
 
 func (a *app) initRepo() error {
-	repo := repositories.NewRepository(a.db, a.logger)
+	repo := repositories.NewRepository(a.db, a.logger, a.tracer)
 
 	a.repo = repo
 
@@ -106,7 +106,7 @@ func (a *app) initMigrations() error {
 }
 
 func (a *app) initQueue() error {
-	q, err := queue.NewQueue(a.cfg.RabbitDSN, a.logger)
+	q, err := queue.NewQueue(a.cfg.RabbitDSN, a.logger, a.tracer)
 	if err != nil {
 		return fmt.Errorf("cannot init queue: %w", err)
 	}

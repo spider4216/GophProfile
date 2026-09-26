@@ -16,6 +16,8 @@ import (
 	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/models"
 	srvModel "github.com/spider4216/GophProfile/internal/server/models"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Queue interface {
@@ -40,21 +42,27 @@ type Meter interface {
 	Count(ctx context.Context, name string, desc string, t string) error
 }
 
+type Tracer interface {
+	Start(ctx context.Context, name string) (context.Context, trace.Span)
+}
+
 type Service struct {
 	repo   Repository
 	logger *slog.Logger
 	queue  Queue
 	s3Cli  S3Client
 	meter  Meter
+	tracer Tracer
 }
 
-func New(repo Repository, logger *slog.Logger, queue Queue, s3Cli S3Client, meter Meter) *Service {
+func New(repo Repository, logger *slog.Logger, queue Queue, s3Cli S3Client, meter Meter, tracer Tracer) *Service {
 	return &Service{
 		repo:   repo,
 		logger: logger,
 		queue:  queue,
 		s3Cli:  s3Cli,
 		meter:  meter,
+		tracer: tracer,
 	}
 }
 
@@ -63,6 +71,9 @@ func (s *Service) IsDBOK(ctx context.Context) bool {
 }
 
 func (s *Service) CreateAvatar(ctx context.Context, fname string, mtype string, size int64, s3Key string) (*models.Avatar, error) {
+	ctx, span := s.tracer.Start(ctx, "CreateMetadataAvatar")
+	defer span.End()
+
 	ava := models.Avatar{
 		UserID:    s.GetUserIdFromCtx(ctx),
 		FileName:  fname,
@@ -78,10 +89,15 @@ func (s *Service) CreateAvatar(ctx context.Context, fname string, mtype string, 
 
 	ava.ID = id
 
+	span.SetAttributes(attribute.String("avatarID", id))
+
 	return &ava, nil
 }
 
 func (s *Service) CreateTmpFile(ctx context.Context, filename string, file io.Reader, uid string) error {
+	_, span := s.tracer.Start(ctx, "CreateTmpFile")
+	defer span.End()
+
 	ext := filepath.Ext(filename)
 	name := strings.TrimSuffix(filename, ext)
 
@@ -103,10 +119,16 @@ func (s *Service) CreateTmpFile(ctx context.Context, filename string, file io.Re
 		return fmt.Errorf("cannot put file into tmp: %w", err)
 	}
 
+	span.SetAttributes(attribute.String("file", filename))
+
 	return nil
 }
 
 func (s *Service) SendUploadEvent(ctx context.Context, userID string, avaID string, s3k string) error {
+	ctx, span := s.tracer.Start(ctx, "SendUploadEvent")
+	defer span.End()
+	span.SetAttributes(attribute.String("avatar_id", avaID))
+
 	e := models.AvatarUploadEvent{
 		AvatarID: avaID,
 		UserID:   userID,
