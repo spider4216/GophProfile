@@ -192,6 +192,8 @@ func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *mod
 }
 
 func (s *Service) GetBinaryAva(ctx context.Context, s3key string) ([]byte, error) {
+	ctx, _ = s.tracer.Start(ctx, "GetBinaryAvatar")
+
 	return s.s3Cli.Download(ctx, s3key)
 }
 
@@ -201,6 +203,10 @@ func (s *Service) GetBinaryThumbnail(ctx context.Context, ava *models.Avatar, si
 	if !ok {
 		return nil, fmt.Errorf("cannot fine s3key thumbnail by size: %s", size)
 	}
+
+	ctx, span := s.tracer.Start(ctx, "GetBinaryThumbnail")
+	defer span.End()
+	span.SetAttributes(attribute.String("s3key", s3Key))
 
 	return s.s3Cli.Download(ctx, s3Key)
 }

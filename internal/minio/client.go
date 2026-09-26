@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -18,13 +20,18 @@ const (
 	useSSL = false
 )
 
+type Tracer interface {
+	Start(ctx context.Context, name string) (context.Context, trace.Span)
+}
+
 type S3Client struct {
 	cli        *s3.S3
 	bucketName string
 	logger     *slog.Logger
+	tracer     Tracer
 }
 
-func NewS3Client(login string, pass string, host string, bucket string, logger *slog.Logger) (*S3Client, error) {
+func NewS3Client(login string, pass string, host string, bucket string, logger *slog.Logger, tracer Tracer) (*S3Client, error) {
 	s3Cfg := &aws.Config{
 		Region:           aws.String(region),
 		Endpoint:         aws.String(host),
@@ -44,6 +51,7 @@ func NewS3Client(login string, pass string, host string, bucket string, logger *
 		cli:        client,
 		bucketName: bucket,
 		logger:     logger,
+		tracer:     tracer,
 	}, nil
 }
 
@@ -95,6 +103,13 @@ func (s *S3Client) DeleteAva(ctx context.Context, key string) error {
 }
 
 func (s *S3Client) Download(ctx context.Context, key string) ([]byte, error) {
+	ctx, span := s.tracer.Start(ctx, "DownloadMinio")
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("bucket", s.bucketName),
+		attribute.String("key", key),
+	)
+
 	// Получаем объект из S3
 	result, err := s.cli.GetObjectWithContext(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucketName),

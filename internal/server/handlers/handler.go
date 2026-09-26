@@ -147,6 +147,11 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	ctx, span := h.tracer.Start(ctx, "GetAvatar")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
+	sc := trace.SpanContextFromContext(ctx)
+
 	id := r.PathValue("avatar_id")
 
 	size := r.URL.Query().Get("size")
@@ -154,26 +159,26 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	ava, err := h.service.GetAvatarByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Debug("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err, "trace_id", sc.TraceID())
 
 			b, err := h.service.PrepareNotFoundResp()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				h.logger.Error("cannot marshal 404 resp")
+				h.logger.Error("cannot marshal 404 resp", "trace_id", sc.TraceID())
 				return
 			}
 
 			w.WriteHeader(http.StatusNotFound)
 
 			if _, err := w.Write(b); err != nil {
-				h.logger.Error("failed to write response", "error", err)
+				h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID())
 				return
 			}
 
 			return
 		}
 
-		h.logger.Error("cannot get avatar", "error", err)
+		h.logger.Error("cannot get avatar", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -188,14 +193,14 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 			b, err := h.service.PrepareNotFoundResp()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				h.logger.Error("cannot prepare not found resp")
+				h.logger.Error("cannot prepare not found resp", "trace_id", sc.TraceID())
 				return
 			}
 
 			w.WriteHeader(code)
 
 			if _, err := w.Write(b); err != nil {
-				h.logger.Error("failed to write response", "error", err)
+				h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID())
 				return
 			}
 
@@ -203,7 +208,7 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Иначе возаращаем внутреннюю ошибку без тела
-		h.logger.Error("getting avatar error", "error", err)
+		h.logger.Error("getting avatar error", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -216,7 +221,7 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if _, err := w.Write(b); err != nil {
-		h.logger.Error("failed to write response", "error", err)
+		h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID())
 		return
 	}
 }
