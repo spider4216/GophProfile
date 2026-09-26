@@ -27,8 +27,6 @@ func (m *Meter) Init(ctx context.Context) (func(), error) {
 	// Создаём OTel Exporter
 	exporter, err := otlpmetrichttp.New(
 		ctx,
-		// todo в конфиг
-		otlpmetrichttp.WithEndpoint("otel-collector:4318"),
 		otlpmetrichttp.WithInsecure(),
 	)
 
