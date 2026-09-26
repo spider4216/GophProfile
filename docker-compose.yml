@@ -88,11 +88,19 @@ services:
       MINIO_HOST: http://minio:9000
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
+      OTEL_SERVICE_NAME: worker
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+      OTEL_EXPORTER_OTLP_COMPRESSION: gzip
+      OTEL_EXPORTER_OTLP_INSECURE: true
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     volumes:
       - shared_tmp:/tmp
 

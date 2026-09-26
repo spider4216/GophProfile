@@ -42,7 +42,6 @@ func Init(ctx context.Context, serviceName string, serviceVer string) (*slog.Log
 
 	// Создаем slog Handler через otelslog bridge
 	handler := otelslog.NewHandler(
-		// todo servicename to config
 		serviceName,
 		otelslog.WithLoggerProvider(loggerProvider),
 	)
