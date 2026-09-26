@@ -14,7 +14,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
-func Init(ctx context.Context) (*slog.Logger, func(), error) {
+func Init(ctx context.Context, serviceName string, serviceVer string) (*slog.Logger, func(), error) {
 	// Создаём gRPC Exporter для логов
 	exporter, err := otlploggrpc.New(ctx)
 	if err != nil {
@@ -26,9 +26,8 @@ func Init(ctx context.Context) (*slog.Logger, func(), error) {
 		resource.WithFromEnv(),
 		resource.WithTelemetrySDK(),
 		resource.WithAttributes(
-			// todo service name and version to config
-			semconv.ServiceNameKey.String("gophprofile"),
-			semconv.ServiceVersionKey.String("1.0.0"),
+			semconv.ServiceNameKey.String(serviceName),
+			semconv.ServiceVersionKey.String(serviceVer),
 		),
 	)
 	if err != nil {
@@ -44,7 +43,7 @@ func Init(ctx context.Context) (*slog.Logger, func(), error) {
 	// Создаем slog Handler через otelslog bridge
 	handler := otelslog.NewHandler(
 		// todo servicename to config
-		"gopgprofile",
+		serviceName,
 		otelslog.WithLoggerProvider(loggerProvider),
 	)
 

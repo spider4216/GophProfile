@@ -23,7 +23,7 @@ func NewMeter() *Meter {
 	return &Meter{}
 }
 
-func (m *Meter) Init(ctx context.Context) (func(), error) {
+func (m *Meter) Init(ctx context.Context, serviceName string, metricName string) (func(), error) {
 	// Создаём OTel Exporter
 	exporter, err := otlpmetrichttp.New(
 		ctx,
@@ -42,8 +42,7 @@ func (m *Meter) Init(ctx context.Context) (func(), error) {
 		resource.WithHost(),
 		resource.WithOS(),
 		resource.WithAttributes(
-			// todo to config
-			semconv.ServiceNameKey.String("gophprofile"),
+			semconv.ServiceNameKey.String(serviceName),
 			attribute.String("environment", os.Getenv("GO_ENV")),
 		),
 	)
@@ -60,8 +59,7 @@ func (m *Meter) Init(ctx context.Context) (func(), error) {
 	)
 	otel.SetMeterProvider(meterProvider)
 
-	// todo to config
-	m.cli = meterProvider.Meter("goprofile.metrics")
+	m.cli = meterProvider.Meter(metricName)
 
 	return func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)

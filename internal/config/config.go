@@ -24,6 +24,9 @@ type Config struct {
 	BucketName     string        `env:"BUCKET_NAME" envDefault:"avatars"`
 	QualityProcess int           `env:"QUALITY_PROCESS" envDefault:"90"`
 	CacheTTL       int           `env:"CACHE_TTL" envDefault:"86400"`
+	ServiceName    string        `env:"SERVICE_NAME" envDefault:"gophprofile"`
+	ServiceVersion string        `env:"SERVICE_VERSION" envDefault:"1.0.0"`
+	MetricName     string        `env:"METRIC_NAME" envDefault:"goprofile.metrics"`
 }
 
 func New() (*Config, error) {

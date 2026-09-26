@@ -91,7 +91,7 @@ func (a *app) initConfig() error {
 }
 
 func (a *app) initLogger() error {
-	logger, shutdown, err := logger.Init(a.ctx)
+	logger, shutdown, err := logger.Init(a.ctx, a.cfg.ServiceName, a.cfg.ServiceVersion)
 	if err != nil {
 		return fmt.Errorf("cannot init logger: %w", err)
 	}

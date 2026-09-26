@@ -22,7 +22,7 @@ func NewTracer() *Tracer {
 	return &Tracer{}
 }
 
-func (t *Tracer) Init(ctx context.Context) (func(), error) {
+func (t *Tracer) Init(ctx context.Context, serviceName string) (func(), error) {
 	// Создаём gRPC Exporter (порт 4317)
 	exporter, err := otlptracegrpc.New(ctx)
 
@@ -49,8 +49,7 @@ func (t *Tracer) Init(ctx context.Context) (func(), error) {
 	)
 
 	t.provider = tracerProvider
-	// todo servicename to config
-	t.tracer = tracerProvider.Tracer("gophprofile")
+	t.tracer = tracerProvider.Tracer(serviceName)
 
 	// Регистрируем глобальный провайдер
 	otel.SetTracerProvider(tracerProvider)

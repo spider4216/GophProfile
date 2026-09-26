@@ -74,7 +74,7 @@ func (a *app) initConfig() error {
 }
 
 func (a *app) initLogger() error {
-	logger, shutdown, err := logger.Init(a.ctx)
+	logger, shutdown, err := logger.Init(a.ctx, a.cfg.ServiceName, a.cfg.ServiceVersion)
 	if err != nil {
 		return fmt.Errorf("cannot init logger: %w", err)
 	}
@@ -156,7 +156,7 @@ func (a *app) initCtx() error {
 
 func (a *app) initMeter() error {
 	m := meter.NewMeter()
-	f, err := m.Init(a.ctx)
+	f, err := m.Init(a.ctx, a.cfg.ServiceName, a.cfg.MetricName)
 
 	if err != nil {
 		return fmt.Errorf("cannot init meter: %w", err)
@@ -170,7 +170,7 @@ func (a *app) initMeter() error {
 
 func (a *app) initTracer() error {
 	t := tracer.NewTracer()
-	f, err := t.Init(a.ctx)
+	f, err := t.Init(a.ctx, a.cfg.ServiceName)
 
 	if err != nil {
 		return fmt.Errorf("cannot init tracer: %w", err)
