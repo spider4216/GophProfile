@@ -11,6 +11,7 @@ import (
 
 	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
+	"github.com/spider4216/GophProfile/internal/meter"
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
@@ -29,6 +30,8 @@ type app struct {
 	logShutdown    func()
 	tracer         *tracer.Tracer
 	tracerShutdown func()
+	meter          *meter.Meter
+	meterShutdown  func()
 }
 
 func newApp() *app {
@@ -39,8 +42,9 @@ func (a *app) Run() error {
 	_, err := config.NewBuilder(a).
 		Step((*app).initCtx).
 		Step((*app).initConfig).
-		Step((*app).initTracer).
 		Step((*app).initLogger).
+		Step((*app).initTracer).
+		Step((*app).initMeter).
 		Step((*app).initDB).
 		Step((*app).initRepo).
 		Step((*app).initQueue).
@@ -153,6 +157,19 @@ func (a *app) initTracer() error {
 
 	a.tracer = t
 	a.tracerShutdown = f
+
+	return nil
+}
+
+func (a *app) initMeter() error {
+	m := meter.NewMeter()
+	f, err := m.Init(a.ctx, a.cfg.ServiceName, a.cfg.MetricName)
+	if err != nil {
+		return fmt.Errorf("cannot init meter: %w", err)
+	}
+
+	a.meter = m
+	a.meterShutdown = f
 
 	return nil
 }

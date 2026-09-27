@@ -54,6 +54,8 @@ func (app *app) runConsume(ctx context.Context, handler *handlers.Handler) {
 
 func (app *app) shutdown() error {
 	app.logShutdown()
+	app.tracerShutdown()
+	app.meterShutdown()
 
 	if err := app.queue.ConnectClose(); err != nil {
 		return fmt.Errorf("cannot close queue connection")

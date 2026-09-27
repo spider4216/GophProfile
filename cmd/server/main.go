@@ -68,6 +68,8 @@ func main() {
 		app.logger.Debug("Shutdown server...")
 
 		app.logShutdown()
+		app.meterShutdown()
+		app.tracerShutdown()
 
 		ctxShutdown, cancel := context.WithTimeout(context.Background(), serverTimeout)
 		defer cancel()

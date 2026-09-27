@@ -44,9 +44,7 @@ func New(cfg *config.Config, logger *slog.Logger, service *services.Service, tra
 }
 
 func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	ctx, span := h.tracer.Start(ctx, "UploadAvatar")
+	ctx, span := h.tracer.Start(r.Context(), "UploadAvatar")
 	defer span.End()
 	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
 	sc := trace.SpanContextFromContext(ctx)
@@ -145,9 +143,7 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	ctx, span := h.tracer.Start(ctx, "GetAvatar")
+	ctx, span := h.tracer.Start(r.Context(), "GetAvatar")
 	defer span.End()
 	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
 	sc := trace.SpanContextFromContext(ctx)
@@ -227,19 +223,22 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx, span := h.tracer.Start(r.Context(), "GetAvatar")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
+	sc := trace.SpanContextFromContext(ctx)
 
 	id := r.PathValue("avatar_id")
 
 	ava, err := h.service.GetAvatarByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Debug("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err, "trace_id", sc.TraceID())
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		h.logger.Error("cannot get avatar", "error", err)
+		h.logger.Error("cannot get avatar", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -249,12 +248,12 @@ func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(resp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		h.logger.Error("cannot marshal")
+		h.logger.Error("cannot marshal", "error", err, "trace_id", sc.TraceID())
 		return
 	}
 
 	if _, err := w.Write(b); err != nil {
-		h.logger.Error("failed to write response", "error", err)
+		h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID())
 		return
 	}
 }
