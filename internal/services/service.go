@@ -143,6 +143,10 @@ func (s *Service) SendUploadEvent(ctx context.Context, userID string, avaID stri
 }
 
 func (s *Service) SendDeleteEvent(ctx context.Context, avaID string) error {
+	ctx, span := s.tracer.Start(ctx, "SendDeleteEvent")
+	defer span.End()
+	span.SetAttributes(attribute.String("avatar_id", avaID))
+
 	e := models.AvatarDeleteEvent{
 		AvatarID: avaID,
 	}

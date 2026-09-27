@@ -88,7 +88,7 @@ func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent)
 		}
 	}()
 
-	ctx, span := q.tracer.Start(ctx, "SendToQueue")
+	ctx, span := q.tracer.Start(ctx, "SendUploadToQueue")
 	defer span.End()
 	span.SetAttributes(attribute.String("queue", q.uploadQueue.Name))
 
@@ -106,6 +106,10 @@ func (q *Queue) SendDeleteEvent(ctx context.Context, e models.AvatarDeleteEvent)
 			q.logger.Warn("cannot close channel", "error", err)
 		}
 	}()
+
+	ctx, span := q.tracer.Start(ctx, "SendDeleteToQueue")
+	defer span.End()
+	span.SetAttributes(attribute.String("queue", q.deleteQueue.Name))
 
 	return sendEvent(ctx, e, q.deleteQueue.Name, ch)
 }

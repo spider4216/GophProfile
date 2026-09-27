@@ -310,8 +310,10 @@ func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Delete avatar")
-	ctx := r.Context()
+	ctx, span := h.tracer.Start(r.Context(), "DeleteAvatar")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
+	sc := trace.SpanContextFromContext(ctx)
 
 	userID := h.service.GetUserIdFromCtx(ctx)
 
@@ -320,30 +322,30 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 	ava, err := h.service.GetAvatarByID(ctx, avaID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Debug("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err, "trace_id", sc.TraceID())
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		h.logger.Error("cannot get avatar", "error", err)
+		h.logger.Error("cannot get avatar", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if ava.UserID != userID {
-		h.logger.Error("ava user id not match with request user id")
+		h.logger.Error("ava user id not match with request user id", "trace_id", sc.TraceID())
 
 		b, err := h.service.PrepareForbiddenResp()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			h.logger.Error("cannot prepare forbidden resp")
+			h.logger.Error("cannot prepare forbidden resp", "error", err, "trace_id", sc.TraceID())
 			return
 		}
 
 		w.WriteHeader(http.StatusForbidden)
 
 		if _, err := w.Write(b); err != nil {
-			h.logger.Error("failed to write response", "error", err)
+			h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID())
 			return
 		}
 
@@ -365,7 +367,7 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 		// приема сообщения брокером, то делается retry,
 		// т.е. производится повторная отправка
 		if !errors.As(err, &confirmErr) {
-			h.logger.Error("cannot send delete event", "error", err)
+			h.logger.Error("cannot send delete event", "error", err, "trace_id", sc.TraceID())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -462,7 +464,7 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserAvatars(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Delete user avatars")
+	h.logger.Debug("Get user avatars")
 
 	userID := r.PathValue("user_id")
 	ctx := r.Context()
