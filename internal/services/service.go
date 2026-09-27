@@ -158,7 +158,7 @@ func (s *Service) SendDeleteEvents(ctx context.Context, avas []models.Avatar) er
 	sc := trace.SpanContextFromContext(ctx)
 
 	for _, ava := range avas {
-		s.logger.Debug("Send to delete ava", "id", ava.ID, "trace_id", sc.TraceID())
+		s.logger.Debug("Send to delete ava", "id", ava.ID, "trace_id", sc.TraceID().String())
 		e := models.AvatarDeleteEvent{
 			AvatarID: ava.ID,
 		}

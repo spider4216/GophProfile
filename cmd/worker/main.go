@@ -8,9 +8,11 @@ import (
 	"log/slog"
 
 	"github.com/rabbitmq/amqp091-go"
+	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/tracer"
 	"github.com/spider4216/GophProfile/internal/worker/handlers"
 	"github.com/spider4216/GophProfile/internal/worker/services"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -73,9 +75,16 @@ func consume[T any](
 	logger *slog.Logger,
 	tracer *tracer.Tracer,
 ) {
+	ctx = otel.GetTextMapPropagator().Extract(
+		ctx,
+		queue.AMQPCarrier(delivery.Headers),
+	)
+
 	ctx, span := tracer.Start(ctx, "ConsumeEvent")
 	defer span.End()
 	sc := trace.SpanContextFromContext(ctx)
+
+	logger.Debug("Consume", "trace_id", sc.TraceID().String())
 
 	var event T
 

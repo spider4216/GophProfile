@@ -10,6 +10,7 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/spider4216/GophProfile/internal/models"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -47,6 +48,37 @@ type Queue struct {
 	deleteConsumer  <-chan amqp.Delivery
 	processConsumer <-chan amqp.Delivery
 	tracer          Tracer
+}
+
+type AMQPCarrier amqp.Table
+
+func (c AMQPCarrier) Get(key string) string {
+	value, ok := c[key]
+	if !ok {
+		return ""
+	}
+
+	s, ok := value.(string)
+
+	if !ok {
+		return ""
+	}
+
+	return s
+}
+
+func (c AMQPCarrier) Set(key string, value string) {
+	c[key] = value
+}
+
+func (c AMQPCarrier) Keys() []string {
+	keys := make([]string, 0, len(c))
+
+	for key := range c {
+		keys = append(keys, key)
+	}
+
+	return keys
 }
 
 func NewQueue(dsn string, logger *slog.Logger, tracer Tracer) (*Queue, error) {
@@ -144,6 +176,15 @@ func sendEvent[T any](ctx context.Context, e T, queue string, ch *amqp.Channel) 
 	publishCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
+	// Создаём AMQP headers
+	headers := amqp.Table{}
+
+	// Кладём trace context в headers
+	otel.GetTextMapPropagator().Inject(
+		ctx,
+		AMQPCarrier(headers),
+	)
+
 	err = ch.PublishWithContext(
 		publishCtx,
 		exchange, // exchange пока default
@@ -153,6 +194,7 @@ func sendEvent[T any](ctx context.Context, e T, queue string, ch *amqp.Channel) 
 		amqp.Publishing{
 			Body:         b,               // тело сообщения
 			DeliveryMode: amqp.Persistent, // сообщение будет сохранено на диск
+			Headers:      headers,         // в заголовках будет на traceID
 		},
 	)
 	if err != nil {

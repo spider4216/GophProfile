@@ -49,6 +49,8 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
 	sc := trace.SpanContextFromContext(ctx)
 
+	h.logger.Debug("Upload avatar", "trace_id", sc.TraceID().String())
+
 	file, header, err := r.FormFile("image")
 	if err != nil {
 		h.logger.Debug("something wrong with file", "error", err, "trace_id", sc.TraceID().String())
