@@ -212,6 +212,10 @@ func (repo *Repository) DeleteAvatar(ctx context.Context, ID string) error {
 func (repo *Repository) GetUserAvatars(ctx context.Context, userID string) ([]models.Avatar, error) {
 	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE user_id=$1 and deleted_at IS NULL ORDER BY created_at"
 
+	ctx, span := repo.tracer.Start(ctx, "GetUserAvatarsDB")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
+
 	rows, err := repo.con.QueryContext(ctx, sql, userID)
 	if err != nil {
 		return nil, err

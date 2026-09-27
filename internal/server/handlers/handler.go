@@ -399,39 +399,44 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Delete user avatars")
-
 	userID := r.PathValue("user_id")
-	ctx := r.Context()
+
+	ctx, span := h.tracer.Start(r.Context(), "DeleteUserAvatars")
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("current_user_id", h.service.GetUserIdFromCtx(ctx)),
+		attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)),
+	)
+	sc := trace.SpanContextFromContext(ctx)
 
 	avas, err := h.service.GetUserAvatars(ctx, userID)
 	if err != nil {
-		h.logger.Error("cannot get user avatars", "error", err)
+		h.logger.Error("cannot get user avatars", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if len(avas) <= 0 {
-		h.logger.Debug("user avatars not found", "error", err)
+		h.logger.Debug("user avatars not found", "error", err, "trace_id", sc.TraceID())
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	for _, ava := range avas {
 		if ava.UserID != h.service.GetUserIdFromCtx(ctx) {
-			h.logger.Debug("ava user id not match with request user id")
+			h.logger.Debug("ava user id not match with request user id", "trace_id", sc.TraceID())
 
 			b, err := h.service.PrepareForbiddenResp()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				h.logger.Error("cannot prepare forbidden resp")
+				h.logger.Error("cannot prepare forbidden resp", "error", err, "trace_id", sc.TraceID())
 				return
 			}
 
 			w.WriteHeader(http.StatusForbidden)
 
 			if _, err := w.Write(b); err != nil {
-				h.logger.Error("failed to write response", "error", err)
+				h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID())
 				return
 			}
 
@@ -454,7 +459,7 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 		// приема сообщения брокером, то делается retry,
 		// т.е. производится повторная отправка
 		if !errors.As(err, &confirmErr) {
-			h.logger.Error("cannot send delete event", "error", err)
+			h.logger.Error("cannot send delete event", "error", err, "trace_id", sc.TraceID())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
