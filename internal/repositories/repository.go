@@ -165,6 +165,10 @@ func (repo *Repository) CommitProcess(ctx context.Context, avatarID string, thum
 func (repo *Repository) GetLatestUserAvatar(ctx context.Context, userID string) (*models.Avatar, error) {
 	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE user_id=$1 and deleted_at IS NULL ORDER BY created_at DESC LIMIT 1"
 
+	ctx, span := repo.tracer.Start(ctx, "GetLatestUserAvatarDB")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
+
 	var ava models.Avatar
 
 	var thumbnailS3Keys []byte
