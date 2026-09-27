@@ -77,6 +77,13 @@ func (s *S3Client) InitBucket() error {
 }
 
 func (s *S3Client) Upload(ctx context.Context, key string, reader io.ReadSeeker, ctype string) error {
+	ctx, span := s.tracer.Start(ctx, "UploadMinio")
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("bucket", s.bucketName),
+		attribute.String("key", key),
+	)
+
 	_, err := s.cli.PutObjectWithContext(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(s.bucketName),
 		Key:         aws.String(key),
@@ -91,6 +98,13 @@ func (s *S3Client) Upload(ctx context.Context, key string, reader io.ReadSeeker,
 }
 
 func (s *S3Client) DeleteAva(ctx context.Context, key string) error {
+	ctx, span := s.tracer.Start(ctx, "DeleteMinio")
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("bucket", s.bucketName),
+		attribute.String("key", key),
+	)
+
 	_, err := s.cli.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),

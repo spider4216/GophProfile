@@ -17,6 +17,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/models"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -38,23 +40,32 @@ type Repository interface {
 	DeleteAvatar(ctx context.Context, ID string) error
 }
 
+type Tracer interface {
+	Start(ctx context.Context, name string) (context.Context, trace.Span)
+}
+
 type Service struct {
 	logger *slog.Logger
 	queue  Queue
 	repo   Repository
 	s3Cli  S3Client
+	tracer Tracer
 }
 
-func NewService(logger *slog.Logger, q Queue, repo Repository, s3Cli S3Client) *Service {
+func NewService(logger *slog.Logger, q Queue, repo Repository, s3Cli S3Client, tracer Tracer) *Service {
 	return &Service{
 		logger: logger,
 		queue:  q,
 		repo:   repo,
 		s3Cli:  s3Cli,
+		tracer: tracer,
 	}
 }
 
 func (s *Service) Upload(ctx context.Context, e models.AvatarUploadEvent) error {
+	ctx, span := s.tracer.Start(ctx, "UploadAvatarConsumeProcess")
+	defer span.End()
+
 	ava, err := s.repo.GetAvatarByID(ctx, e.AvatarID)
 	if err != nil {
 		return fmt.Errorf("cannot get ava from db: %w", err)
@@ -64,6 +75,8 @@ func (s *Service) Upload(ctx context.Context, e models.AvatarUploadEvent) error 
 	name := strings.TrimSuffix(ava.FileName, ext)
 
 	filename := name + "_" + e.S3Key + ext
+
+	span.SetAttributes(attribute.String("filename", filename))
 
 	file, err := os.Open("/tmp/" + filename)
 	if err != nil {
@@ -88,6 +101,10 @@ func (s *Service) Upload(ctx context.Context, e models.AvatarUploadEvent) error 
 }
 
 func (s *Service) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent, quality int) error {
+	ctx, span := s.tracer.Start(ctx, "ProceeAvatarConsume")
+	defer span.End()
+	sc := trace.SpanContextFromContext(ctx)
+
 	// Извлечь из БД аватар
 	ava, err := s.repo.GetAvatarByID(ctx, e.AvatarID)
 	if err != nil {
@@ -132,7 +149,7 @@ func (s *Service) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent
 
 		// Распаралеливаем обработку и загрузку
 		g.Go(func() error {
-			s.logger.Debug("process and upload avatar", "id", ava.ID, "size", v)
+			s.logger.Debug("process and upload avatar", "id", ava.ID, "size", v, "trace_id", sc.TraceID().String())
 			// Для каждого сделать rsize и кроп
 			result := imaging.Fill(img, cw, ch, imaging.Center, imaging.Lanczos)
 
@@ -178,6 +195,10 @@ func (s *Service) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent
 }
 
 func (s *Service) DeleteAvatar(ctx context.Context, e *models.AvatarDeleteEvent) error {
+	ctx, span := s.tracer.Start(ctx, "DeleteAvatarProcess")
+	defer span.End()
+	sc := trace.SpanContextFromContext(ctx)
+
 	// Получаем ava
 	ava, err := s.repo.GetAvatarByID(ctx, e.AvatarID)
 	if err != nil {
@@ -202,7 +223,7 @@ func (s *Service) DeleteAvatar(ctx context.Context, e *models.AvatarDeleteEvent)
 	}
 
 	// Удаляем основной avatar в minio
-	s.logger.Debug("delete key", "key", ava.S3Key)
+	s.logger.Debug("delete key", "key", ava.S3Key, "trace_id", sc.TraceID().String())
 	if err := s.s3Cli.DeleteAva(ctx, ava.S3Key); err != nil {
 		return fmt.Errorf("cannot delete avatar from minio: %w", err)
 	}
@@ -212,6 +233,12 @@ func (s *Service) DeleteAvatar(ctx context.Context, e *models.AvatarDeleteEvent)
 }
 
 func (s *Service) SendProcessEvent(ctx context.Context, avaID string) error {
+	ctx, span := s.tracer.Start(ctx, "SendProcessEvent")
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("avatarID", avaID),
+	)
+
 	e := models.AvatarProcessEvent{
 		AvatarID: avaID,
 		Operations: []models.ProcessingOp{

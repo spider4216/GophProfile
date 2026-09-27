@@ -111,6 +111,10 @@ func (repo *Repository) UpdateThumbnailsTx(ctx context.Context, tx *sql.Tx, ID s
 func (repo *Repository) updateThumbnails(ctx context.Context, db Querier, ID string, thumbnails []byte) error {
 	sql := "UPDATE avatars SET thumbnail_s3_keys=$1 WHERE id=$2"
 
+	ctx, span := repo.tracer.Start(ctx, "UpdateThumbnails")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
+
 	_, err := db.ExecContext(ctx, sql, thumbnails, ID)
 	if err != nil {
 		return err
@@ -126,6 +130,10 @@ func (repo *Repository) UpdateAvatarProcStatusTx(ctx context.Context, tx *sql.Tx
 func (repo *Repository) updateAvatarProcStatus(ctx context.Context, db Querier, ID string, status enum.ProcStatus) error {
 	sql := "UPDATE avatars SET processing_status=$1 WHERE id=$2"
 
+	ctx, span := repo.tracer.Start(ctx, "UpdateAvatarProcStatus")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
+
 	_, err := db.ExecContext(ctx, sql, status, ID)
 	if err != nil {
 		return err
@@ -135,6 +143,9 @@ func (repo *Repository) updateAvatarProcStatus(ctx context.Context, db Querier, 
 }
 
 func (repo *Repository) CommitProcess(ctx context.Context, avatarID string, thumbBytes []byte) error {
+	ctx, span := repo.tracer.Start(ctx, "CommitProcessDB")
+	defer span.End()
+
 	tx, err := repo.con.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
@@ -200,6 +211,10 @@ func (repo *Repository) GetLatestUserAvatar(ctx context.Context, userID string) 
 
 func (repo *Repository) DeleteAvatar(ctx context.Context, ID string) error {
 	sql := "UPDATE avatars SET deleted_at=$1 WHERE id=$2"
+
+	ctx, span := repo.tracer.Start(ctx, "DeleteAvatarDB")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
 
 	_, err := repo.con.ExecContext(ctx, sql, time.Now(), ID)
 	if err != nil {
