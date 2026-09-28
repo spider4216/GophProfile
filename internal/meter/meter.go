@@ -91,3 +91,23 @@ func (m *Meter) Count(ctx context.Context, name string, desc string, t string) e
 
 	return nil
 }
+
+func (m *Meter) Histogram(ctx context.Context, op string, start time.Time) error {
+	latency, err := m.cli.Float64Histogram(
+		fmt.Sprintf("operation_%s_seconds", op),
+		ometric.WithDescription("Operation duration"),
+		ometric.WithExplicitBucketBoundaries(0.01, 0.05, 0.1, 0.5, 1.0),
+	)
+
+	if err != nil {
+		return fmt.Errorf("cannot cretae histogram metric: %w", err)
+	}
+
+	elapsed := time.Since(start).Seconds()
+
+	latency.Record(ctx, elapsed, ometric.WithAttributes(
+		attribute.String("operation", op),
+	))
+
+	return nil
+}

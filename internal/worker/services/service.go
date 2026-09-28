@@ -44,21 +44,27 @@ type Tracer interface {
 	Start(ctx context.Context, name string) (context.Context, trace.Span)
 }
 
+type Meter interface {
+	Count(ctx context.Context, name string, desc string, t string) error
+}
+
 type Service struct {
 	logger *slog.Logger
 	queue  Queue
 	repo   Repository
 	s3Cli  S3Client
 	tracer Tracer
+	meter  Meter
 }
 
-func NewService(logger *slog.Logger, q Queue, repo Repository, s3Cli S3Client, tracer Tracer) *Service {
+func NewService(logger *slog.Logger, q Queue, repo Repository, s3Cli S3Client, tracer Tracer, meter Meter) *Service {
 	return &Service{
 		logger: logger,
 		queue:  q,
 		repo:   repo,
 		s3Cli:  s3Cli,
 		tracer: tracer,
+		meter:  meter,
 	}
 }
 

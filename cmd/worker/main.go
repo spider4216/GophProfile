@@ -23,8 +23,8 @@ func main() {
 		log.Fatal("Cannot run app", err)
 	}
 
-	service := services.NewService(app.logger, app.queue, app.repo, app.s3Client, app.tracer)
-	handler := handlers.NewHandler(app.logger, service, app.cfg, app.tracer)
+	service := services.NewService(app.logger, app.queue, app.repo, app.s3Client, app.tracer, app.meter)
+	handler := handlers.NewHandler(app.logger, service, app.cfg, app.tracer, app.meter)
 
 	defer app.ctxStop()
 	defer app.logShutdown()

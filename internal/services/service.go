@@ -151,6 +151,10 @@ func (s *Service) SendDeleteEvent(ctx context.Context, avaID string) error {
 		AvatarID: avaID,
 	}
 
+	if err := s.meter.Count(ctx, "delete_event", "Count of sent events", "send"); err != nil {
+		return fmt.Errorf("cannot set delete metric: %w", err)
+	}
+
 	return s.queue.SendDeleteEvent(ctx, e)
 }
 

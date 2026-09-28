@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/models"
@@ -18,19 +19,26 @@ type Tracer interface {
 	Start(ctx context.Context, name string) (context.Context, trace.Span)
 }
 
+type Meter interface {
+	Histogram(ctx context.Context, op string, start time.Time) error
+	Count(ctx context.Context, name string, desc string, t string) error
+}
+
 type Handler struct {
 	logger  *slog.Logger
 	service *services.Service
 	cfg     *config.Config
 	tracer  Tracer
+	meter   Meter
 }
 
-func NewHandler(logger *slog.Logger, service *services.Service, cfg *config.Config, tracer Tracer) *Handler {
+func NewHandler(logger *slog.Logger, service *services.Service, cfg *config.Config, tracer Tracer, meter Meter) *Handler {
 	return &Handler{
 		logger:  logger,
 		service: service,
 		cfg:     cfg,
 		tracer:  tracer,
+		meter:   meter,
 	}
 }
 
@@ -38,6 +46,8 @@ func (h *Handler) UploadAvatar(ctx context.Context, e models.AvatarUploadEvent) 
 	ctx, span := h.tracer.Start(ctx, "UploadAvatarConsume")
 	defer span.End()
 	span.SetAttributes(attribute.String("avatarID", e.AvatarID), attribute.String("user_id", e.UserID))
+
+	start := time.Now()
 
 	err := h.service.Upload(ctx, e)
 	if err != nil {
@@ -62,6 +72,10 @@ func (h *Handler) UploadAvatar(ctx context.Context, e models.AvatarUploadEvent) 
 		}
 	}
 
+	if err := h.meter.Histogram(ctx, "upload_avatar_duration", start); err != nil {
+		return fmt.Errorf("cannot send upload duration metric: %w", err)
+	}
+
 	return nil
 }
 
@@ -70,7 +84,17 @@ func (h *Handler) ProcessAvatar(ctx context.Context, e models.AvatarProcessEvent
 	defer span.End()
 	span.SetAttributes(attribute.String("avatarID", e.AvatarID))
 
-	return h.service.ProcessAvatar(ctx, e, h.cfg.QualityProcess)
+	start := time.Now()
+
+	if err := h.service.ProcessAvatar(ctx, e, h.cfg.QualityProcess); err != nil {
+		return fmt.Errorf("cannot process avatar: %w", err)
+	}
+
+	if err := h.meter.Histogram(ctx, "process_avatar_duration", start); err != nil {
+		return fmt.Errorf("cannot send process duration metric: %w", err)
+	}
+
+	return nil
 }
 
 func (h *Handler) DeleteAvatar(ctx context.Context, e *models.AvatarDeleteEvent) error {
@@ -78,5 +102,15 @@ func (h *Handler) DeleteAvatar(ctx context.Context, e *models.AvatarDeleteEvent)
 	defer span.End()
 	span.SetAttributes(attribute.String("avatarID", e.AvatarID))
 
-	return h.service.DeleteAvatar(ctx, e)
+	start := time.Now()
+
+	if err := h.service.DeleteAvatar(ctx, e); err != nil {
+		return fmt.Errorf("cannot send delete metric: %w", err)
+	}
+
+	if err := h.meter.Histogram(ctx, "delete_avatar_duration", start); err != nil {
+		return fmt.Errorf("cannot send delete duration metric: %w", err)
+	}
+
+	return nil
 }

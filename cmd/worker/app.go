@@ -111,7 +111,7 @@ func (a *app) initLogger() error {
 }
 
 func (a *app) initMinio() error {
-	cli, err := minio.NewS3Client(a.cfg.MinioUser, a.cfg.MinioPass, a.cfg.MinioHost, a.cfg.BucketName, a.logger, a.tracer)
+	cli, err := minio.NewS3Client(a.cfg.MinioUser, a.cfg.MinioPass, a.cfg.MinioHost, a.cfg.BucketName, a.logger, a.tracer, a.meter)
 	if err != nil {
 		return fmt.Errorf("cannot create s3 client: %w", err)
 	}
