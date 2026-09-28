@@ -28,6 +28,8 @@ func main() {
 
 	defer app.ctxStop()
 	defer app.logShutdown()
+	defer app.meterShutdown()
+	defer app.tracerShutdown()
 
 	app.logger.Debug("Run consumers...")
 
