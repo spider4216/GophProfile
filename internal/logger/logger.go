@@ -49,9 +49,6 @@ func Init(ctx context.Context, serviceName string, serviceVer string) (*slog.Log
 	// Создаем slog логгер с этим handler'ом
 	logger := slog.New(handler)
 
-	// Устанавливаем как глобальный логгер
-	slog.SetDefault(logger)
-
 	// Возвращаем функцию для корректного завершения (flush данных перед выходом)
 	shutdown := func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
