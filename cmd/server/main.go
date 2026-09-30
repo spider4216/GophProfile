@@ -54,9 +54,6 @@ func main() {
 	wg.Add(1)
 
 	defer app.ctxStop()
-	defer app.logShutdown()
-	defer app.meterShutdown()
-	defer app.tracerShutdown()
 
 	go func() {
 		defer wg.Done()
