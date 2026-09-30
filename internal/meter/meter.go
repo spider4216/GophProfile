@@ -16,7 +16,9 @@ import (
 )
 
 type Meter struct {
-	cli ometric.Meter
+	cli       ometric.Meter
+	counter   ometric.Int64Counter
+	histogram ometric.Float64Histogram
 }
 
 func NewMeter() *Meter {
@@ -63,6 +65,27 @@ func (m *Meter) Init(ctx context.Context, serviceName string, metricName string)
 
 	m.cli = meterProvider.Meter(metricName)
 
+	tasksCounter, err := m.cli.Int64Counter(
+		"counter_meter",
+		ometric.WithDescription("Counter meter"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create counter: %w", err)
+	}
+
+	m.counter = tasksCounter
+
+	latency, err := m.cli.Float64Histogram(
+		"histogram_operation_seconds",
+		ometric.WithDescription("Operation duration"),
+		ometric.WithExplicitBucketBoundaries(0.01, 0.05, 0.1, 0.5, 1.0),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot cretae histogram metric: %w", err)
+	}
+
+	m.histogram = latency
+
 	return func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
@@ -76,16 +99,8 @@ func (m *Meter) Init(ctx context.Context, serviceName string, metricName string)
 // name - пример tasks_processed_total
 // desc - описание задачи
 // t - тип таска, например "upload"
-func (m *Meter) Count(ctx context.Context, name string, desc string, t string) error {
-	tasksCounter, err := m.cli.Int64Counter(
-		name,
-		ometric.WithDescription(desc),
-	)
-	if err != nil {
-		return fmt.Errorf("cannot create counter: %w", err)
-	}
-
-	tasksCounter.Add(ctx, 1, ometric.WithAttributes(
+func (m *Meter) Count(ctx context.Context, t string) error {
+	m.counter.Add(ctx, 1, ometric.WithAttributes(
 		attribute.String("task_type", t),
 	))
 
@@ -93,18 +108,9 @@ func (m *Meter) Count(ctx context.Context, name string, desc string, t string) e
 }
 
 func (m *Meter) Histogram(ctx context.Context, op string, start time.Time) error {
-	latency, err := m.cli.Float64Histogram(
-		fmt.Sprintf("operation_%s_seconds", op),
-		ometric.WithDescription("Operation duration"),
-		ometric.WithExplicitBucketBoundaries(0.01, 0.05, 0.1, 0.5, 1.0),
-	)
-	if err != nil {
-		return fmt.Errorf("cannot cretae histogram metric: %w", err)
-	}
-
 	elapsed := time.Since(start).Seconds()
 
-	latency.Record(ctx, elapsed, ometric.WithAttributes(
+	m.histogram.Record(ctx, elapsed, ometric.WithAttributes(
 		attribute.String("operation", op),
 	))
 

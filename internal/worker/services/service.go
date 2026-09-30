@@ -45,7 +45,7 @@ type Tracer interface {
 }
 
 type Meter interface {
-	Count(ctx context.Context, name string, desc string, t string) error
+	Count(ctx context.Context, t string) error
 }
 
 type Service struct {

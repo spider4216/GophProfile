@@ -11,7 +11,7 @@ func NewMeter() *Meter {
 	return &Meter{}
 }
 
-func (m *Meter) Count(ctx context.Context, name string, desc string, t string) error {
+func (m *Meter) Count(ctx context.Context, t string) error {
 	return nil
 }
 

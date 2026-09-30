@@ -39,7 +39,7 @@ type Repository interface {
 }
 
 type Meter interface {
-	Count(ctx context.Context, name string, desc string, t string) error
+	Count(ctx context.Context, t string) error
 }
 
 type Tracer interface {
@@ -135,7 +135,7 @@ func (s *Service) SendUploadEvent(ctx context.Context, userID string, avaID stri
 		S3Key:    s3k,
 	}
 
-	if err := s.meter.Count(ctx, "upload_event", "Count of sent events", "send"); err != nil {
+	if err := s.meter.Count(ctx, "upload_event"); err != nil {
 		return fmt.Errorf("cannot set upload metric: %w", err)
 	}
 
@@ -151,7 +151,7 @@ func (s *Service) SendDeleteEvent(ctx context.Context, avaID string) error {
 		AvatarID: avaID,
 	}
 
-	if err := s.meter.Count(ctx, "delete_event", "Count of sent events", "send"); err != nil {
+	if err := s.meter.Count(ctx, "delete_event"); err != nil {
 		return fmt.Errorf("cannot set delete metric: %w", err)
 	}
 

@@ -25,7 +25,7 @@ type Tracer interface {
 }
 
 type Meter interface {
-	Count(ctx context.Context, name string, desc string, t string) error
+	Count(ctx context.Context, t string) error
 }
 
 type S3Client struct {
@@ -100,7 +100,7 @@ func (s *S3Client) Upload(ctx context.Context, key string, reader io.ReadSeeker,
 		return fmt.Errorf("cannot put object to bucket s3: %w", err)
 	}
 
-	if err := s.meter.Count(ctx, "avatars_uploads_total", "total uploaded pictures", "upload_minio"); err != nil {
+	if err := s.meter.Count(ctx, "avatars_uploads_total_minio"); err != nil {
 		return fmt.Errorf("cannot send metric to avatars_uploads_total: %w", err)
 	}
 
@@ -123,7 +123,7 @@ func (s *S3Client) DeleteAva(ctx context.Context, key string) error {
 		return fmt.Errorf("cannot delete object from minio: %w", err)
 	}
 
-	if err := s.meter.Count(ctx, "avatars_delete_total", "total delete pictures", "delete_minio"); err != nil {
+	if err := s.meter.Count(ctx, "avatars_delete_total_minio"); err != nil {
 		return fmt.Errorf("cannot send metric to avatars_delete_total: %w", err)
 	}
 
@@ -161,7 +161,7 @@ func (s *S3Client) Download(ctx context.Context, key string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read object data in s3: %w", err)
 	}
 
-	if err := s.meter.Count(ctx, "avatars_download_total", "total downloaded pictures", "download_minio"); err != nil {
+	if err := s.meter.Count(ctx, "avatars_download_total_minio"); err != nil {
 		return nil, fmt.Errorf("cannot send metric to avatars_download_total: %w", err)
 	}
 
