@@ -202,7 +202,8 @@ func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *mod
 }
 
 func (s *Service) GetBinaryAva(ctx context.Context, s3key string) ([]byte, error) {
-	ctx, _ = s.tracer.Start(ctx, "GetBinaryAvatar")
+	ctx, span := s.tracer.Start(ctx, "GetBinaryAvatar")
+	defer span.End()
 
 	return s.s3Cli.Download(ctx, s3key)
 }
