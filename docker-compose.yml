@@ -169,6 +169,12 @@ services:
     restart: always
     ports:
       - '16686:16686' # UI Jaeger (http://localhost:16686) 
+  
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    ports:
+      - '9100:9100' 
 
 
 volumes:
