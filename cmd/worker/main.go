@@ -27,9 +27,6 @@ func main() {
 	handler := handlers.NewHandler(app.logger, service, app.cfg, app.tracer, app.meter)
 
 	defer app.ctxStop()
-	defer app.logShutdown()
-	defer app.meterShutdown()
-	defer app.tracerShutdown()
 
 	app.logger.Debug("Run consumers...")
 
