@@ -12,6 +12,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/models"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Querier interface {
@@ -20,13 +22,18 @@ type Querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
+type Tracer interface {
+	Start(ctx context.Context, name string) (context.Context, trace.Span)
+}
+
 type Repository struct {
 	con    *sql.DB
 	logger *slog.Logger
+	tracer Tracer
 }
 
-func NewRepository(con *sql.DB, logger *slog.Logger) *Repository {
-	return &Repository{con: con, logger: logger}
+func NewRepository(con *sql.DB, logger *slog.Logger, tracer Tracer) *Repository {
+	return &Repository{con: con, logger: logger, tracer: tracer}
 }
 
 func (repo *Repository) Ping(ctx context.Context) error {
@@ -35,6 +42,11 @@ func (repo *Repository) Ping(ctx context.Context) error {
 
 func (repo *Repository) CreateAvatar(ctx context.Context, ava models.Avatar) (string, error) {
 	sql := "INSERT INTO avatars (user_id,file_name,mime_type,size_bytes,s3_key) VALUES ($1,$2,$3,$4,$5) RETURNING id"
+
+	ctx, span := repo.tracer.Start(ctx, "CreateMetadataAvatarDB")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
+
 	var lastInsertId string
 
 	err := repo.con.QueryRowContext(ctx, sql, ava.UserID, ava.FileName, ava.MimeType, ava.SizeBytes, ava.S3Key).Scan(&lastInsertId)
@@ -47,6 +59,10 @@ func (repo *Repository) CreateAvatar(ctx context.Context, ava models.Avatar) (st
 
 func (repo *Repository) GetAvatarByID(ctx context.Context, ID string) (*models.Avatar, error) {
 	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE id=$1 and deleted_at IS NULL"
+
+	ctx, span := repo.tracer.Start(ctx, "GetAvatarDB")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
 
 	var ava models.Avatar
 
@@ -95,6 +111,10 @@ func (repo *Repository) UpdateThumbnailsTx(ctx context.Context, tx *sql.Tx, ID s
 func (repo *Repository) updateThumbnails(ctx context.Context, db Querier, ID string, thumbnails []byte) error {
 	sql := "UPDATE avatars SET thumbnail_s3_keys=$1 WHERE id=$2"
 
+	ctx, span := repo.tracer.Start(ctx, "UpdateThumbnails")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
+
 	_, err := db.ExecContext(ctx, sql, thumbnails, ID)
 	if err != nil {
 		return err
@@ -110,6 +130,10 @@ func (repo *Repository) UpdateAvatarProcStatusTx(ctx context.Context, tx *sql.Tx
 func (repo *Repository) updateAvatarProcStatus(ctx context.Context, db Querier, ID string, status enum.ProcStatus) error {
 	sql := "UPDATE avatars SET processing_status=$1 WHERE id=$2"
 
+	ctx, span := repo.tracer.Start(ctx, "UpdateAvatarProcStatus")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
+
 	_, err := db.ExecContext(ctx, sql, status, ID)
 	if err != nil {
 		return err
@@ -119,6 +143,9 @@ func (repo *Repository) updateAvatarProcStatus(ctx context.Context, db Querier, 
 }
 
 func (repo *Repository) CommitProcess(ctx context.Context, avatarID string, thumbBytes []byte) error {
+	ctx, span := repo.tracer.Start(ctx, "CommitProcessDB")
+	defer span.End()
+
 	tx, err := repo.con.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
@@ -148,6 +175,10 @@ func (repo *Repository) CommitProcess(ctx context.Context, avatarID string, thum
 
 func (repo *Repository) GetLatestUserAvatar(ctx context.Context, userID string) (*models.Avatar, error) {
 	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE user_id=$1 and deleted_at IS NULL ORDER BY created_at DESC LIMIT 1"
+
+	ctx, span := repo.tracer.Start(ctx, "GetLatestUserAvatarDB")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
 
 	var ava models.Avatar
 
@@ -181,6 +212,10 @@ func (repo *Repository) GetLatestUserAvatar(ctx context.Context, userID string) 
 func (repo *Repository) DeleteAvatar(ctx context.Context, ID string) error {
 	sql := "UPDATE avatars SET deleted_at=$1 WHERE id=$2"
 
+	ctx, span := repo.tracer.Start(ctx, "DeleteAvatarDB")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
+
 	_, err := repo.con.ExecContext(ctx, sql, time.Now(), ID)
 	if err != nil {
 		return err
@@ -191,6 +226,10 @@ func (repo *Repository) DeleteAvatar(ctx context.Context, ID string) error {
 
 func (repo *Repository) GetUserAvatars(ctx context.Context, userID string) ([]models.Avatar, error) {
 	sql := "SELECT id,user_id,file_name,mime_type,size_bytes,s3_key,COALESCE(thumbnail_s3_keys, '{}'::jsonb),upload_status,processing_status,created_at,updated_at,deleted_at FROM avatars WHERE user_id=$1 and deleted_at IS NULL ORDER BY created_at"
+
+	ctx, span := repo.tracer.Start(ctx, "GetUserAvatarsDB")
+	defer span.End()
+	span.SetAttributes(attribute.String("sql", sql))
 
 	rows, err := repo.con.QueryContext(ctx, sql, userID)
 	if err != nil {

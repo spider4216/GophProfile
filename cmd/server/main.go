@@ -6,14 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/spider4216/GophProfile/internal/server/handlers"
 	"github.com/spider4216/GophProfile/internal/server/middlewares"
 	"github.com/spider4216/GophProfile/internal/services"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 const (
@@ -27,21 +26,21 @@ func main() {
 		log.Fatal("Cannot run app", err)
 	}
 
-	service := services.New(app.repo, app.logger, app.queue, app.s3Client)
+	service := services.New(app.repo, app.logger, app.queue, app.s3Client, app.meter, app.tracer)
 	middleware := middlewares.New(app.logger, app.cfg, service)
-	handler := handlers.New(app.cfg, app.logger, service)
+	handler := handlers.New(app.cfg, app.logger, service, app.tracer)
 
 	mux := http.NewServeMux()
 
-	mux.Handle("GET /", http.FileServer(http.Dir("./web")))
-	mux.Handle("GET /health", middleware.WithLogging(http.HandlerFunc(handler.Health)))
-	mux.Handle("POST /api/v1/avatars", middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.UploadAvatar))))
-	mux.Handle("GET /api/v1/avatars/{avatar_id}", middleware.WithLogging(http.HandlerFunc(handler.GetAvatar)))
-	mux.Handle("GET /api/v1/users/{user_id}/avatar", middleware.WithLogging(http.HandlerFunc(handler.GetUserAvatar)))
-	mux.Handle("GET /api/v1/avatars/{avatar_id}/metadata", middleware.WithLogging(http.HandlerFunc(handler.GetMetaAvatar)))
-	mux.Handle("DELETE /api/v1/avatars/{id}", middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.DeleteAvatar))))
-	mux.Handle("DELETE /api/v1/users/{user_id}/avatar", middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.DeleteUserAvatars))))
-	mux.Handle("GET /api/v1/users/{user_id}/avatars", middleware.WithLogging(http.HandlerFunc(handler.GetUserAvatars)))
+	mux.Handle("GET /", otelhttp.NewHandler(http.FileServer(http.Dir("./web")), "web"))
+	mux.Handle("GET /health", otelhttp.NewHandler(middleware.WithLogging(http.HandlerFunc(handler.Health)), "health"))
+	mux.Handle("POST /api/v1/avatars", otelhttp.NewHandler(middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.UploadAvatar))), "upload_avatar"))
+	mux.Handle("GET /api/v1/avatars/{avatar_id}", otelhttp.NewHandler(middleware.WithLogging(http.HandlerFunc(handler.GetAvatar)), "get_avatar"))
+	mux.Handle("GET /api/v1/users/{user_id}/avatar", otelhttp.NewHandler(middleware.WithLogging(http.HandlerFunc(handler.GetUserAvatar)), "get_user_avatar"))
+	mux.Handle("GET /api/v1/avatars/{avatar_id}/metadata", otelhttp.NewHandler(middleware.WithLogging(http.HandlerFunc(handler.GetMetaAvatar)), "get_meta_avatar"))
+	mux.Handle("DELETE /api/v1/avatars/{id}", otelhttp.NewHandler(middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.DeleteAvatar))), "delete_avatar"))
+	mux.Handle("DELETE /api/v1/users/{user_id}/avatar", otelhttp.NewHandler(middleware.WithLogging(middleware.WithUser(http.HandlerFunc(handler.DeleteUserAvatars))), "delete_user_avatar"))
+	mux.Handle("GET /api/v1/users/{user_id}/avatars", otelhttp.NewHandler(middleware.WithLogging(http.HandlerFunc(handler.GetUserAvatars)), "get_user_avatars"))
 
 	srv := &http.Server{
 		Addr:         app.cfg.ServerAddress,
@@ -54,19 +53,22 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	defer stop()
+	defer app.ctxStop()
 
 	go func() {
 		defer wg.Done()
 
 		app.logger.Debug("Graceful shutdown mode on")
-		<-ctx.Done()
+		<-app.ctx.Done()
 
 		// Тут тоже останавляваем перехват сигналов
-		stop()
+		app.ctxStop()
 
 		app.logger.Debug("Shutdown server...")
+
+		app.logShutdown()
+		app.meterShutdown()
+		app.tracerShutdown()
 
 		ctxShutdown, cancel := context.WithTimeout(context.Background(), serverTimeout)
 		defer cancel()

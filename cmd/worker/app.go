@@ -1,24 +1,37 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/logger"
+	"github.com/spider4216/GophProfile/internal/meter"
 	"github.com/spider4216/GophProfile/internal/minio"
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/repositories"
+	"github.com/spider4216/GophProfile/internal/tracer"
 )
 
 type app struct {
-	logger   *slog.Logger
-	cfg      *config.Config
-	queue    *queue.Queue
-	s3Client *minio.S3Client
-	repo     *repositories.Repository
-	db       *sql.DB
+	logger         *slog.Logger
+	cfg            *config.Config
+	queue          *queue.Queue
+	s3Client       *minio.S3Client
+	repo           *repositories.Repository
+	db             *sql.DB
+	ctx            context.Context
+	ctxStop        context.CancelFunc
+	logShutdown    func()
+	tracer         *tracer.Tracer
+	tracerShutdown func()
+	meter          *meter.Meter
+	meterShutdown  func()
 }
 
 func newApp() *app {
@@ -27,8 +40,11 @@ func newApp() *app {
 
 func (a *app) Run() error {
 	_, err := config.NewBuilder(a).
+		Step((*app).initCtx).
 		Step((*app).initConfig).
 		Step((*app).initLogger).
+		Step((*app).initTracer).
+		Step((*app).initMeter).
 		Step((*app).initDB).
 		Step((*app).initRepo).
 		Step((*app).initQueue).
@@ -39,7 +55,7 @@ func (a *app) Run() error {
 }
 
 func (a *app) initQueue() error {
-	q, err := queue.NewQueue(a.cfg.RabbitDSN, a.logger)
+	q, err := queue.NewQueue(a.cfg.RabbitDSN, a.logger, a.tracer)
 	if err != nil {
 		return fmt.Errorf("cannot init queue: %w", err)
 	}
@@ -83,15 +99,19 @@ func (a *app) initConfig() error {
 }
 
 func (a *app) initLogger() error {
-	logger := logger.Init(a.cfg.LogLvl)
+	logger, shutdown, err := logger.Init(a.ctx, a.cfg.ServiceName, a.cfg.ServiceVersion)
+	if err != nil {
+		return fmt.Errorf("cannot init logger: %w", err)
+	}
 
 	a.logger = logger
+	a.logShutdown = shutdown
 
 	return nil
 }
 
 func (a *app) initMinio() error {
-	cli, err := minio.NewS3Client(a.cfg.MinioUser, a.cfg.MinioPass, a.cfg.MinioHost, a.cfg.BucketName, a.logger)
+	cli, err := minio.NewS3Client(a.cfg.MinioUser, a.cfg.MinioPass, a.cfg.MinioHost, a.cfg.BucketName, a.logger, a.tracer, a.meter)
 	if err != nil {
 		return fmt.Errorf("cannot create s3 client: %w", err)
 	}
@@ -102,7 +122,7 @@ func (a *app) initMinio() error {
 }
 
 func (a *app) initRepo() error {
-	repo := repositories.NewRepository(a.db, a.logger)
+	repo := repositories.NewRepository(a.db, a.logger, a.tracer)
 
 	a.repo = repo
 
@@ -116,6 +136,40 @@ func (a *app) initDB() error {
 	}
 
 	a.db = db
+
+	return nil
+}
+
+func (a *app) initCtx() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	a.ctx = ctx
+	a.ctxStop = stop
+
+	return nil
+}
+
+func (a *app) initTracer() error {
+	t := tracer.NewTracer()
+	f, err := t.Init(a.ctx, a.cfg.ServiceName)
+	if err != nil {
+		return fmt.Errorf("cannot init tracer: %w", err)
+	}
+
+	a.tracer = t
+	a.tracerShutdown = f
+
+	return nil
+}
+
+func (a *app) initMeter() error {
+	m := meter.NewMeter()
+	f, err := m.Init(a.ctx, a.cfg.ServiceName, a.cfg.MetricName)
+	if err != nil {
+		return fmt.Errorf("cannot init meter: %w", err)
+	}
+
+	a.meter = m
+	a.meterShutdown = f
 
 	return nil
 }

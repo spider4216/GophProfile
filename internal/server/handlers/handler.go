@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -18,35 +19,48 @@ import (
 	"github.com/spider4216/GophProfile/internal/queue"
 	"github.com/spider4216/GophProfile/internal/server/models"
 	"github.com/spider4216/GophProfile/internal/services"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
+
+type Tracer interface {
+	Start(ctx context.Context, name string) (context.Context, trace.Span)
+}
 
 type Handler struct {
 	cfg     *config.Config
 	logger  *slog.Logger
 	service *services.Service
+	tracer  Tracer
 }
 
-func New(cfg *config.Config, logger *slog.Logger, service *services.Service) Handler {
+func New(cfg *config.Config, logger *slog.Logger, service *services.Service, tracer Tracer) Handler {
 	return Handler{
 		cfg:     cfg,
 		logger:  logger,
 		service: service,
+		tracer:  tracer,
 	}
 }
 
 func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx, span := h.tracer.Start(r.Context(), "UploadAvatar")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
+	sc := trace.SpanContextFromContext(ctx)
+
+	h.logger.Debug("Upload avatar", "trace_id", sc.TraceID().String())
 
 	file, header, err := r.FormFile("image")
 	if err != nil {
-		h.logger.Debug("something wrong with file", "error", err)
+		h.logger.Debug("something wrong with file", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	defer func() {
 		if err := file.Close(); err != nil {
-			h.logger.Warn("cannot file close", "error", err)
+			h.logger.Warn("cannot file close", "error", err, "trace_id", sc.TraceID().String())
 		}
 	}()
 
@@ -55,13 +69,13 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	mimetype := header.Header.Get("Content-Type")
 
 	if !slices.Contains(h.cfg.SupportImgExt, mimetype) {
-		h.logger.Debug("file format is not valid", "provided", mimetype)
+		h.logger.Debug("file format is not valid", "provided", mimetype, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if fileSize > h.cfg.MaxImgSize {
-		h.logger.Debug("file is too large", "provided", fileSize)
+		h.logger.Debug("file is too large", "provided", fileSize, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
 		return
 	}
@@ -70,23 +84,23 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 
 	// Сохраняем во временной tmp, поскольку в minio будет загружать потребитель
 	if err := h.service.CreateTmpFile(ctx, fileName, file, uid); err != nil {
-		h.logger.Error("cannot put file to tmp", "error", err)
+		h.logger.Error("cannot put file to tmp", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	ava, err := h.service.CreateAvatar(ctx, fileName, mimetype, fileSize, uid)
 	if err != nil {
-		h.logger.Error("cannot create avatar", "error", err)
+		h.logger.Error("cannot create avatar", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Debug("Data", "filename", fileName, "size", fileSize, "mimetype", mimetype, "ID", ava.ID)
+	h.logger.Debug("Data", "filename", fileName, "size", fileSize, "mimetype", mimetype, "ID", ava.ID, "trace_id", sc.TraceID().String())
 	var confirmErr queue.NoConfirmErr
 
 	for {
-		h.logger.Debug("Send upload event")
+		h.logger.Debug("Send upload event", "trace_id", sc.TraceID().String())
 		err := h.service.SendUploadEvent(ctx, h.service.GetUserIdFromCtx(ctx), ava.ID, ava.S3Key)
 
 		// Если нет ошибки, то выходим
@@ -99,7 +113,7 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 		// приема сообщения брокером, то делается retry,
 		// т.е. производится повторная отправка
 		if !errors.As(err, &confirmErr) {
-			h.logger.Error("cannot send upload event", "error", err)
+			h.logger.Error("cannot send upload event", "error", err, "trace_id", sc.TraceID().String())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -117,7 +131,7 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(resp)
 	if err != nil {
-		h.logger.Error("cannot marshal response", "error", err)
+		h.logger.Error("cannot marshal response", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -125,13 +139,16 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	if _, err := w.Write(b); err != nil {
-		h.logger.Error("failed to write response", "error", err)
+		h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID().String())
 		return
 	}
 }
 
 func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx, span := h.tracer.Start(r.Context(), "GetAvatar")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
+	sc := trace.SpanContextFromContext(ctx)
 
 	id := r.PathValue("avatar_id")
 
@@ -140,26 +157,26 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	ava, err := h.service.GetAvatarByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Debug("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err, "trace_id", sc.TraceID().String())
 
 			b, err := h.service.PrepareNotFoundResp()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				h.logger.Error("cannot marshal 404 resp")
+				h.logger.Error("cannot marshal 404 resp", "trace_id", sc.TraceID().String())
 				return
 			}
 
 			w.WriteHeader(http.StatusNotFound)
 
 			if _, err := w.Write(b); err != nil {
-				h.logger.Error("failed to write response", "error", err)
+				h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID().String())
 				return
 			}
 
 			return
 		}
 
-		h.logger.Error("cannot get avatar", "error", err)
+		h.logger.Error("cannot get avatar", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -174,14 +191,14 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 			b, err := h.service.PrepareNotFoundResp()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				h.logger.Error("cannot prepare not found resp")
+				h.logger.Error("cannot prepare not found resp", "trace_id", sc.TraceID().String())
 				return
 			}
 
 			w.WriteHeader(code)
 
 			if _, err := w.Write(b); err != nil {
-				h.logger.Error("failed to write response", "error", err)
+				h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID().String())
 				return
 			}
 
@@ -189,7 +206,7 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Иначе возаращаем внутреннюю ошибку без тела
-		h.logger.Error("getting avatar error", "error", err)
+		h.logger.Error("getting avatar error", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -202,25 +219,28 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if _, err := w.Write(b); err != nil {
-		h.logger.Error("failed to write response", "error", err)
+		h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID().String())
 		return
 	}
 }
 
 func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx, span := h.tracer.Start(r.Context(), "GetMetadataAvatar")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
+	sc := trace.SpanContextFromContext(ctx)
 
 	id := r.PathValue("avatar_id")
 
 	ava, err := h.service.GetAvatarByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Debug("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err, "trace_id", sc.TraceID().String())
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		h.logger.Error("cannot get avatar", "error", err)
+		h.logger.Error("cannot get avatar", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -230,32 +250,34 @@ func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(resp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		h.logger.Error("cannot marshal")
+		h.logger.Error("cannot marshal", "error", err, "trace_id", sc.TraceID().String())
 		return
 	}
 
 	if _, err := w.Write(b); err != nil {
-		h.logger.Error("failed to write response", "error", err)
+		h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID().String())
 		return
 	}
 }
 
 func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	size := r.URL.Query().Get("size")
-
 	userID := r.PathValue("user_id")
+
+	ctx, span := h.tracer.Start(r.Context(), "GetUserAvatar")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", userID), attribute.String("size", size))
+	sc := trace.SpanContextFromContext(ctx)
 
 	ava, err := h.service.GetLatestActiveUserAvatar(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Debug("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err, "trace_id", sc.TraceID().String())
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		h.logger.Error("cannot get avatar", "error", err)
+		h.logger.Error("cannot get avatar", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -265,13 +287,13 @@ func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Если аватара нет, то возвращаем ответ
 		if code == http.StatusNotFound {
-			h.logger.Debug("avatar binary not found", "error", err)
+			h.logger.Debug("avatar binary not found", "error", err, "trace_id", sc.TraceID().String())
 			w.WriteHeader(code)
 			return
 		}
 
 		// Иначе возаращаем внутреннюю ошибку
-		h.logger.Error("getting avatar binary error", "error", err)
+		h.logger.Error("getting avatar binary error", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -284,14 +306,16 @@ func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if _, err := w.Write(b); err != nil {
-		h.logger.Error("failed to write response", "error", err)
+		h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID().String())
 		return
 	}
 }
 
 func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Delete avatar")
-	ctx := r.Context()
+	ctx, span := h.tracer.Start(r.Context(), "DeleteAvatar")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)))
+	sc := trace.SpanContextFromContext(ctx)
 
 	userID := h.service.GetUserIdFromCtx(ctx)
 
@@ -300,30 +324,30 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 	ava, err := h.service.GetAvatarByID(ctx, avaID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Debug("avatar not found", "error", err)
+			h.logger.Debug("avatar not found", "error", err, "trace_id", sc.TraceID().String())
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		h.logger.Error("cannot get avatar", "error", err)
+		h.logger.Error("cannot get avatar", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if ava.UserID != userID {
-		h.logger.Error("ava user id not match with request user id")
+		h.logger.Error("ava user id not match with request user id", "trace_id", sc.TraceID().String())
 
 		b, err := h.service.PrepareForbiddenResp()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			h.logger.Error("cannot prepare forbidden resp")
+			h.logger.Error("cannot prepare forbidden resp", "error", err, "trace_id", sc.TraceID().String())
 			return
 		}
 
 		w.WriteHeader(http.StatusForbidden)
 
 		if _, err := w.Write(b); err != nil {
-			h.logger.Error("failed to write response", "error", err)
+			h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID().String())
 			return
 		}
 
@@ -345,7 +369,7 @@ func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 		// приема сообщения брокером, то делается retry,
 		// т.е. производится повторная отправка
 		if !errors.As(err, &confirmErr) {
-			h.logger.Error("cannot send delete event", "error", err)
+			h.logger.Error("cannot send delete event", "error", err, "trace_id", sc.TraceID().String())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -377,39 +401,44 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Delete user avatars")
-
 	userID := r.PathValue("user_id")
-	ctx := r.Context()
+
+	ctx, span := h.tracer.Start(r.Context(), "DeleteUserAvatars")
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("current_user_id", h.service.GetUserIdFromCtx(ctx)),
+		attribute.String("user_id", h.service.GetUserIdFromCtx(ctx)),
+	)
+	sc := trace.SpanContextFromContext(ctx)
 
 	avas, err := h.service.GetUserAvatars(ctx, userID)
 	if err != nil {
-		h.logger.Error("cannot get user avatars", "error", err)
+		h.logger.Error("cannot get user avatars", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if len(avas) <= 0 {
-		h.logger.Debug("user avatars not found", "error", err)
+		h.logger.Debug("user avatars not found", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	for _, ava := range avas {
 		if ava.UserID != h.service.GetUserIdFromCtx(ctx) {
-			h.logger.Debug("ava user id not match with request user id")
+			h.logger.Debug("ava user id not match with request user id", "trace_id", sc.TraceID().String())
 
 			b, err := h.service.PrepareForbiddenResp()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				h.logger.Error("cannot prepare forbidden resp")
+				h.logger.Error("cannot prepare forbidden resp", "error", err, "trace_id", sc.TraceID().String())
 				return
 			}
 
 			w.WriteHeader(http.StatusForbidden)
 
 			if _, err := w.Write(b); err != nil {
-				h.logger.Error("failed to write response", "error", err)
+				h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID().String())
 				return
 			}
 
@@ -432,7 +461,7 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 		// приема сообщения брокером, то делается retry,
 		// т.е. производится повторная отправка
 		if !errors.As(err, &confirmErr) {
-			h.logger.Error("cannot send delete event", "error", err)
+			h.logger.Error("cannot send delete event", "error", err, "trace_id", sc.TraceID().String())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -442,20 +471,21 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserAvatars(w http.ResponseWriter, r *http.Request) {
-	h.logger.Debug("Delete user avatars")
-
 	userID := r.PathValue("user_id")
-	ctx := r.Context()
+	ctx, span := h.tracer.Start(r.Context(), "GetUserAvatars")
+	defer span.End()
+	span.SetAttributes(attribute.String("user_id", userID))
+	sc := trace.SpanContextFromContext(ctx)
 
 	avas, err := h.service.GetUserAvatars(ctx, userID)
 	if err != nil {
-		h.logger.Error("cannot get user avatars", "error", err)
+		h.logger.Error("cannot get user avatars", "error", err, "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if len(avas) <= 0 {
-		h.logger.Debug("user avatars not found", "error", err)
+		h.logger.Debug("user avatars not found", "trace_id", sc.TraceID().String())
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -465,14 +495,14 @@ func (h *Handler) GetUserAvatars(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(resp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		h.logger.Error("cannot marshal")
+		h.logger.Error("cannot marshal", "error", err, "trace_id", sc.TraceID().String())
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 
 	if _, err := w.Write(b); err != nil {
-		h.logger.Error("failed to write response", "error", err)
+		h.logger.Error("failed to write response", "error", err, "trace_id", sc.TraceID().String())
 		return
 	}
 }
