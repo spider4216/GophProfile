@@ -16,6 +16,8 @@ import (
 	"github.com/spider4216/GophProfile/internal/enum"
 	"github.com/spider4216/GophProfile/internal/models"
 	srvModel "github.com/spider4216/GophProfile/internal/server/models"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Queue interface {
@@ -36,19 +38,31 @@ type Repository interface {
 	GetUserAvatars(ctx context.Context, userID string) ([]models.Avatar, error)
 }
 
+type Meter interface {
+	Count(ctx context.Context, t string) error
+}
+
+type Tracer interface {
+	Start(ctx context.Context, name string) (context.Context, trace.Span)
+}
+
 type Service struct {
 	repo   Repository
 	logger *slog.Logger
 	queue  Queue
 	s3Cli  S3Client
+	meter  Meter
+	tracer Tracer
 }
 
-func New(repo Repository, logger *slog.Logger, queue Queue, s3Cli S3Client) *Service {
+func New(repo Repository, logger *slog.Logger, queue Queue, s3Cli S3Client, meter Meter, tracer Tracer) *Service {
 	return &Service{
 		repo:   repo,
 		logger: logger,
 		queue:  queue,
 		s3Cli:  s3Cli,
+		meter:  meter,
+		tracer: tracer,
 	}
 }
 
@@ -57,6 +71,9 @@ func (s *Service) IsDBOK(ctx context.Context) bool {
 }
 
 func (s *Service) CreateAvatar(ctx context.Context, fname string, mtype string, size int64, s3Key string) (*models.Avatar, error) {
+	ctx, span := s.tracer.Start(ctx, "CreateMetadataAvatar")
+	defer span.End()
+
 	ava := models.Avatar{
 		UserID:    s.GetUserIdFromCtx(ctx),
 		FileName:  fname,
@@ -72,10 +89,15 @@ func (s *Service) CreateAvatar(ctx context.Context, fname string, mtype string, 
 
 	ava.ID = id
 
+	span.SetAttributes(attribute.String("avatarID", id))
+
 	return &ava, nil
 }
 
 func (s *Service) CreateTmpFile(ctx context.Context, filename string, file io.Reader, uid string) error {
+	_, span := s.tracer.Start(ctx, "CreateTmpFile")
+	defer span.End()
+
 	ext := filepath.Ext(filename)
 	name := strings.TrimSuffix(filename, ext)
 
@@ -97,30 +119,50 @@ func (s *Service) CreateTmpFile(ctx context.Context, filename string, file io.Re
 		return fmt.Errorf("cannot put file into tmp: %w", err)
 	}
 
+	span.SetAttributes(attribute.String("file", filename))
+
 	return nil
 }
 
 func (s *Service) SendUploadEvent(ctx context.Context, userID string, avaID string, s3k string) error {
+	ctx, span := s.tracer.Start(ctx, "SendUploadEvent")
+	defer span.End()
+	span.SetAttributes(attribute.String("avatar_id", avaID))
+
 	e := models.AvatarUploadEvent{
 		AvatarID: avaID,
 		UserID:   userID,
 		S3Key:    s3k,
 	}
 
+	if err := s.meter.Count(ctx, "upload_event"); err != nil {
+		return fmt.Errorf("cannot set upload metric: %w", err)
+	}
+
 	return s.queue.SendUploadEvent(ctx, e)
 }
 
 func (s *Service) SendDeleteEvent(ctx context.Context, avaID string) error {
+	ctx, span := s.tracer.Start(ctx, "SendDeleteEvent")
+	defer span.End()
+	span.SetAttributes(attribute.String("avatar_id", avaID))
+
 	e := models.AvatarDeleteEvent{
 		AvatarID: avaID,
+	}
+
+	if err := s.meter.Count(ctx, "delete_event"); err != nil {
+		return fmt.Errorf("cannot set delete metric: %w", err)
 	}
 
 	return s.queue.SendDeleteEvent(ctx, e)
 }
 
 func (s *Service) SendDeleteEvents(ctx context.Context, avas []models.Avatar) error {
+	sc := trace.SpanContextFromContext(ctx)
+
 	for _, ava := range avas {
-		s.logger.Debug("Send to delete ava", "id", ava.ID)
+		s.logger.Debug("Send to delete ava", "id", ava.ID, "trace_id", sc.TraceID().String())
 		e := models.AvatarDeleteEvent{
 			AvatarID: ava.ID,
 		}
@@ -160,6 +202,9 @@ func (s *Service) GetComplexBinaryAva(ctx context.Context, size string, ava *mod
 }
 
 func (s *Service) GetBinaryAva(ctx context.Context, s3key string) ([]byte, error) {
+	ctx, span := s.tracer.Start(ctx, "GetBinaryAvatar")
+	defer span.End()
+
 	return s.s3Cli.Download(ctx, s3key)
 }
 
@@ -169,6 +214,10 @@ func (s *Service) GetBinaryThumbnail(ctx context.Context, ava *models.Avatar, si
 	if !ok {
 		return nil, fmt.Errorf("cannot fine s3key thumbnail by size: %s", size)
 	}
+
+	ctx, span := s.tracer.Start(ctx, "GetBinaryThumbnail")
+	defer span.End()
+	span.SetAttributes(attribute.String("s3key", s3Key))
 
 	return s.s3Cli.Download(ctx, s3Key)
 }

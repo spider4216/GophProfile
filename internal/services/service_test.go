@@ -2,30 +2,37 @@ package services
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/spider4216/GophProfile/internal/logger"
+	"github.com/spider4216/GophProfile/internal/meter/metertest"
 	"github.com/spider4216/GophProfile/internal/minio/miniotest"
 	"github.com/spider4216/GophProfile/internal/models"
 	"github.com/spider4216/GophProfile/internal/queue/qtest"
 	"github.com/spider4216/GophProfile/internal/repositories/reptest"
+	"github.com/spider4216/GophProfile/internal/tracer/tracertest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func prepareService(store map[string][][]byte, qstore map[string][][]byte, mstore map[string]map[string][]byte) *Service {
-	logger := logger.Init("debug")
+	handler := slog.NewJSONHandler(os.Stdout, nil)
+	logger := slog.New(handler)
 	repo := reptest.NewRepository(logger, store)
 	queue := qtest.NewQueue(logger, qstore)
 	minio := miniotest.NewS3Client("test", logger, mstore)
+	meter := metertest.NewMeter()
+	tracer := tracertest.NewTracer()
 
 	return New(
 		repo,
 		logger,
 		queue,
 		minio,
+		meter,
+		tracer,
 	)
 }
 
