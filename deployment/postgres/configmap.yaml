@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres
+data:
+  POSTGRES_DB: gophprofile
+  POSTGRES_USER: postgres     # todo в secrets
+  POSTGRES_PASSWORD: postgres # todo в secrets

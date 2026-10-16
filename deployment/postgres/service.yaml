@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+    version: '1.0'
+spec:
+  # Тип сервиса
+  type: ClusterIP
+   
+  # Селектор. Выбирает Pods для маршрутизации трафика по их лейблам
+  selector:
+    app: postgres
+
+  # Порты сервиса
+  ports:
+  - name: http                    # Уникальное имя порта (для DNS SRV записей)
+    protocol: TCP                 # TCP или UDP
+    port: 5432                    # Порт, на котором сервис принимает запросы
+    targetPort: 5432              # Порт контейнера в поде

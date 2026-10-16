@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres       # Имя Deployment
+  labels:
+    app: postgres      # Лейблы Deployment
+    version: '1.0'
+spec:
+  replicas: 1          # Одна пода с postgres
+  selector:
+    matchLabels:
+      app: postgres    # По этим лейблам Deployment будет связан с контейнером
+      version: '1.0'      
+  template:
+    metadata:
+      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+        app: postgres
+        version: '1.0'
+    spec:
+      containers:                      # Описание контейнера
+      - name: postgres                 # Имя контейнера
+        image: postgres:18             # Образ и версия образа
+        imagePullPolicy: IfNotPresent  # Политика скачивания образа
+        ports:
+        - containerPort: 5432          # Порт контейнера
+        envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
+          - configMapRef:
+              name: postgres             # Название configmap
