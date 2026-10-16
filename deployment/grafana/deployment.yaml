@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana       # Имя Deployment
+  labels:
+    app: grafana      # Лейблы Deployment
+    version: '1.0'
+spec:
+  replicas: 1          # Одна пода с postgres
+  selector:
+    matchLabels:
+      app: grafana    # По этим лейблам Deployment будет связан с контейнером
+      version: '1.0'      
+  template:
+    metadata:
+      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+        app: grafana
+        version: '1.0'
+    spec:
+      containers:                        # Описание контейнера
+      - name: grafana                   # Имя контейнера
+        image: grafana/grafana:12.3.1  # Образ и версия образа
+        imagePullPolicy: IfNotPresent    # Политика скачивания образа
+        ports:
+          - containerPort: 3000        # Порт контейнера с api
+        volumeMounts:
+            # Постоянное хранилище Grafana
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+            
+            # Дашборды
+            - name: grafana-dashboards
+              mountPath: /etc/grafana/provisioning/dashboards
+              readOnly: true
+            
+            # Датасорсы
+            - name: grafana-datasources
+              mountPath: /etc/grafana/provisioning/datasources
+              readOnly: true
+      volumes:
+        - name: grafana-data
+          persistentVolumeClaim:
+            claimName: grafana-pvc
+        
+        - name: grafana-dashboards
+          configMap:
+            name: grafana-dashboards
+        
+        - name: grafana-datasources
+          configMap:
+            name: grafana-datasources
