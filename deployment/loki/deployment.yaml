@@ -21,6 +21,8 @@ spec:
       - name: loki                      # Имя контейнера
         image: grafana/loki:3.6.3       # Образ и версия образа
         imagePullPolicy: IfNotPresent    # Политика скачивания образа
+        args:
+          - "-config.file=/etc/loki/local-config.yml"
         ports:
           - containerPort: 3100        # Порт контейнера с api
         volumeMounts:
