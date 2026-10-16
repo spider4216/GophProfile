@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rabbitmq          # Имя Deployment
+  name: rabbitmq       # Имя Deployment
   labels:
-    app: rabbitmq         # Лейблы Deployment
+    app: rabbitmq      # Лейблы Deployment
     version: '1.0'
 spec:
   replicas: 1          # Одна пода с postgres
   selector:
     matchLabels:
-      app: rabbitmq       # По этим лейблам Deployment будет связан с контейнером
+      app: rabbitmq    # По этим лейблам Deployment будет связан с контейнером
       version: '1.0'      
   template:
     metadata:
@@ -17,18 +17,18 @@ spec:
         app: rabbitmq
         version: '1.0'
     spec:
-      containers:                                               # Описание контейнера
-      - name: rabbitmq                                             # Имя контейнера
-        image: rabbitmq:3.12-management                  # Образ и версия образа
-        imagePullPolicy: IfNotPresent                           # Политика скачивания образа
+      containers:                        # Описание контейнера
+      - name: rabbitmq                   # Имя контейнера
+        image: rabbitmq:3.12-management  # Образ и версия образа
+        imagePullPolicy: IfNotPresent    # Политика скачивания образа
         ports:
           - name: api
-            containerPort: 5672          # Порт контейнера с api
+            containerPort: 5672        # Порт контейнера с api
           - name: web
             containerPort: 15672
         envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
           - configMapRef:
-              name: rabbitmq              # Название configmap
+              name: rabbitmq           # Название configmap
         volumeMounts:
             - name: rabbitmq-data
               mountPath: /var/lib/rabbitmq

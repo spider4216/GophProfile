@@ -20,8 +20,10 @@ kubectl apply -f deployment/minio/service.yaml --namespace=gophprofile
 # Apply для Rabbitmq
 kubectl apply -f deployment/rabbitmq/rabbitmq-pvc.yaml -n gophprofile
 kubectl apply -f deployment/rabbitmq/configmap.yaml -n gophprofile
-kubectl apply -f deployment/rabbitmq/rabbitmq-deployment.yaml -n gophprofile
+kubectl apply -f deployment/rabbitmq/deployment.yaml -n gophprofile
+kubectl apply -f deployment/rabbitmq/service.yaml -n gophprofile
 
 
 # Проброс портов (cheetsheet)
 # kubectl port-forward service/minio 9001:9001 -n gophprofile
+# kubectl port-forward service/rabbitmq 15672:15672 -n gophprofile
