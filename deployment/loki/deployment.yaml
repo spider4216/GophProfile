@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki       # Имя Deployment
+  labels:
+    app: loki      # Лейблы Deployment
+    version: '1.0'
+spec:
+  replicas: 1          # Одна пода с postgres
+  selector:
+    matchLabels:
+      app: loki    # По этим лейблам Deployment будет связан с контейнером
+      version: '1.0'      
+  template:
+    metadata:
+      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+        app: loki
+        version: '1.0'
+    spec:
+      containers:                        # Описание контейнера
+      - name: loki                      # Имя контейнера
+        image: grafana/loki:3.6.3       # Образ и версия образа
+        imagePullPolicy: IfNotPresent    # Политика скачивания образа
+        ports:
+          - containerPort: 3100        # Порт контейнера с api
+        volumeMounts:
+            - name: loki-data
+              mountPath: /loki
+            - name: loki-config
+              mountPath: /etc/loki/local-config.yml
+              subPath: loki-config.yml
+      volumes:
+        - name: loki-data
+          persistentVolumeClaim:
+            claimName: loki-pvc
+        - name: loki-config
+          configMap:
+            name: loki

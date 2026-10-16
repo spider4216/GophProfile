@@ -40,6 +40,11 @@ kubectl apply -f deployment/prometheus/service.yaml -n gophprofile
 kubectl apply -f deployment/grafana/grafana-pvc.yaml -n gophprofile
 kubectl apply -k . -n gophprofile
 
+# Apply для Loki
+kubectl apply -f deployment/loki/loki-pvc.yaml -n gophprofile
+kubectl apply -f deployment/loki/configmap.yaml -n gophprofile
+kubectl apply -f deployment/loki/service.yaml -n gophprofile
+
 
 # Проброс портов (cheetsheet)
 # kubectl port-forward service/minio 9001:9001 -n gophprofile
