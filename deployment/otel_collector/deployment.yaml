@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector       # Имя Deployment
+  labels:
+    app: otel-collector      # Лейблы Deployment
+    version: '1.0'
+spec:
+  replicas: 1          # Одна пода с postgres
+  selector:
+    matchLabels:
+      app: otel-collector    # По этим лейблам Deployment будет связан с контейнером
+      version: '1.0'      
+  template:
+    metadata:
+      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+        app: otel-collector
+        version: '1.0'
+    spec:
+      containers:                        # Описание контейнера
+      - name: otel-collector                      # Имя контейнера
+        image: otel/opentelemetry-collector-contrib:0.143.0       # Образ и версия образа
+        imagePullPolicy: IfNotPresent    # Политика скачивания образа
+        args:
+          - "--config=/etc/otel-collector-config.yml"
+        ports:
+          - name: grpc-port
+            containerPort: 4317
+          - name: http-port
+            containerPort: 4318
+          - name: prometheus-port
+            containerPort: 8889
+          - name: health-port
+            containerPort: 13133
+        volumeMounts:
+            - name: otel-collector-config
+              mountPath: /etc/otel-collector-config.yml
+              subPath: otel-collector-config.yml
+      volumes:
+        - name: otel-collector-config
+          configMap:
+            name: otel-collector

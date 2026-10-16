@@ -45,6 +45,10 @@ kubectl apply -f deployment/loki/loki-pvc.yaml -n gophprofile
 kubectl apply -f deployment/loki/configmap.yaml -n gophprofile
 kubectl apply -f deployment/loki/service.yaml -n gophprofile
 
+kubectl apply -f deployment/otel_collector/configmap.yaml -n gophprofile
+kubectl apply -f deployment/otel_collector/deployment.yaml -n gophprofile
+kubectl apply -f deployment/otel_collector/service.yaml -n gophprofile
+
 
 # Проброс портов (cheetsheet)
 # kubectl port-forward service/minio 9001:9001 -n gophprofile
