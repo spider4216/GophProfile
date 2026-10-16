@@ -23,6 +23,10 @@ kubectl apply -f deployment/rabbitmq/configmap.yaml -n gophprofile
 kubectl apply -f deployment/rabbitmq/deployment.yaml -n gophprofile
 kubectl apply -f deployment/rabbitmq/service.yaml -n gophprofile
 
+# Apply для node-exporter
+kubectl apply -f deployment/node_exporter/deployment.yaml -n gophprofile
+kubectl apply -f deployment/node_exporter/service.yaml -n gophprofile
+
 
 # Проброс портов (cheetsheet)
 # kubectl port-forward service/minio 9001:9001 -n gophprofile

@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-exporter       # Имя Deployment
+  labels:
+    app: node-exporter      # Лейблы Deployment
+    version: '1.0'
+spec:
+  replicas: 1               # Одна пода с postgres
+  selector:
+    matchLabels:
+      app: node-exporter    # По этим лейблам Deployment будет связан с контейнером
+      version: '1.0'      
+  template:
+    metadata:
+      labels:               # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+        app: node-exporter
+        version: '1.0'
+    spec:
+      containers:                        # Описание контейнера
+      - name: node-exporter              # Имя контейнера
+        image: prom/node-exporter:latest # Образ и версия образа
+        imagePullPolicy: IfNotPresent    # Политика скачивания образа
+        ports:
+        - containerPort: 9100            # Порт контейнера
