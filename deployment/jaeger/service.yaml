@@ -19,3 +19,7 @@ spec:
     protocol: TCP                 # TCP или UDP
     port: 16686                   # Порт, на котором сервис принимает запросы
     targetPort: 16686             # Порт контейнера в поде
+  - name: otlp-grpc
+    protocol: TCP
+    port: 4317
+    targetPort: 4317

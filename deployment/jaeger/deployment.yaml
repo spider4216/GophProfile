@@ -22,4 +22,9 @@ spec:
         image: jaegertracing/all-in-one:latest # Образ и версия образа
         imagePullPolicy: IfNotPresent          # Политика скачивания образа
         ports:
-        - containerPort: 16686                 # Порт контейнера
+        - name: http
+          containerPort: 16686                 # Порт контейнера
+        - name: otlp-grpc
+          containerPort: 4317
+        - name: otlp-http
+          containerPort: 4318
