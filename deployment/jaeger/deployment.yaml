@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger       # Имя Deployment
+  labels:
+    app: jaeger      # Лейблы Deployment
+    version: '1.0'
+spec:
+  replicas: 1        # Одна пода с postgres
+  selector:
+    matchLabels:
+      app: jaeger    # По этим лейблам Deployment будет связан с контейнером
+      version: '1.0'      
+  template:
+    metadata:
+      labels:        # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+        app: jaeger
+        version: '1.0'
+    spec:
+      containers:                              # Описание контейнера
+      - name: jaeger                           # Имя контейнера
+        image: jaegertracing/all-in-one:latest # Образ и версия образа
+        imagePullPolicy: IfNotPresent          # Политика скачивания образа
+        ports:
+        - containerPort: 16686                 # Порт контейнера
