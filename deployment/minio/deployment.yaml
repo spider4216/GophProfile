@@ -31,3 +31,10 @@ spec:
         envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
           - configMapRef:
               name: minio              # Название configmap
+        volumeMounts:
+            - name: minio-data
+              mountPath: /data
+      volumes:
+        - name: minio-data
+          persistentVolumeClaim:
+            claimName: minio-pvc 
