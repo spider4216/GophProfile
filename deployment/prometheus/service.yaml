@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+    version: '1.0'
+spec:
+  # Тип сервиса
+  type: ClusterIP
+   
+  # Селектор. Выбирает Pods для маршрутизации трафика по их лейблам
+  selector:
+    app: prometheus
+
+  # Порты сервиса
+  ports:
+  - name: http                    # Уникальное имя порта (для DNS SRV записей)
+    protocol: TCP                 # TCP или UDP
+    port: 9090                    # Порт, на котором сервис принимает запросы
+    targetPort: 9090              # Порт контейнера в поде

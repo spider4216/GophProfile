@@ -31,8 +31,14 @@ kubectl apply -f deployment/node_exporter/service.yaml -n gophprofile
 kubectl apply -f deployment/jaeger/deployment.yaml -n gophprofile
 kubectl apply -f deployment/jaeger/service.yaml -n gophprofile
 
+# Apply для Prometheus
+kubectl apply -f deployment/prometheus/configmap.yaml -n gophprofile
+kubectl apply -f deployment/prometheus/deployment.yaml -n gophprofile
+kubectl apply -f deployment/prometheus/service.yaml -n gophprofile
+
 
 # Проброс портов (cheetsheet)
 # kubectl port-forward service/minio 9001:9001 -n gophprofile
 # kubectl port-forward service/rabbitmq 15672:15672 -n gophprofile
 # kubectl port-forward service/jaeger 16686:16686 -n gophprofile
+# kubectl port-forward service/prometheus 9090:9090 -n gophprofile
