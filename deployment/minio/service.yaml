@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  labels:
+    app: minio
+    version: '1.0'
+spec:
+  # Тип сервиса
+  type: ClusterIP
+   
+  # Селектор. Выбирает Pods для маршрутизации трафика по их лейблам
+  selector:
+    app: minio
+
+  # Порты сервиса
+  ports:
+  - name: api         # Уникальное имя порта (для DNS SRV записей)
+    port: 9000        # Порт, на котором сервис принимает запросы
+    targetPort: 9000  # Порт контейнера в поде
+  - name: web
+    port: 9001        # Порт для WEB
+    targetPort: 9001

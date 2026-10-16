@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio          # Имя Deployment
+  labels:
+    app: minio         # Лейблы Deployment
+    version: '1.0'
+spec:
+  replicas: 1          # Одна пода с postgres
+  selector:
+    matchLabels:
+      app: minio       # По этим лейблам Deployment будет связан с контейнером
+      version: '1.0'      
+  template:
+    metadata:
+      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+        app: minio
+        version: '1.0'
+    spec:
+      containers:                                               # Описание контейнера
+      - name: minio                                             # Имя контейнера
+        image: cgr.dev/chainguard/minio:latest                  # Образ и версия образа
+        imagePullPolicy: IfNotPresent                           # Политика скачивания образа
+        command: ["minio"]                                      # Команда запуска
+        args: ["server", "/data", "--console-address", ":9001"] # Аргументы для команды запуска
+        ports:
+          - name: api
+            containerPort: 9000          # Порт контейнера с api
+          - name: web
+            containerPort: 9001
+        envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
+          - configMapRef:
+              name: minio              # Название configmap

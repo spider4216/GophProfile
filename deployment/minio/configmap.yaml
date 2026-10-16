@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio
+data:
+  MINIO_ROOT_USER: minio        # todo to secrets
+  MINIO_ROOT_PASSWORD: minio123 # todo to secrets
