@@ -61,6 +61,10 @@ k3d image import gophprofile:1.0 -c local
 kubectl apply -f deployment/worker/configmap.yaml -n gophprofile
 kubectl apply -f deployment/worker/deployment.yaml -n gophprofile
 
+# Apply для самого app
+kubectl apply -f deployment/app/configmap.yaml -n gophprofile
+kubectl apply -f deployment/app/deployment.yaml -n gophprofile
+kubectl apply -f deployment/app/service.yaml -n gophprofile
 
 # Проброс портов (cheetsheet)
 # kubectl port-forward service/minio 9001:9001 -n gophprofile
