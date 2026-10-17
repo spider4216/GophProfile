@@ -27,6 +27,7 @@ type Config struct {
 	ServiceName    string        `env:"SERVICE_NAME" envDefault:"gophprofile"`
 	ServiceVersion string        `env:"SERVICE_VERSION" envDefault:"1.0.0"`
 	MetricName     string        `env:"METRIC_NAME" envDefault:"goprofile.metrics"`
+	Https          bool          `env:"ENABLE_HTTPS" envDefault:"true"`
 }
 
 func New() (*Config, error) {

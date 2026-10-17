@@ -7,7 +7,7 @@ metadata:
     version: '1.0'
 spec:
   # Тип сервиса
-  type: NodePort
+  type: ClusterIP
    
   # Селектор. Выбирает Pods для маршрутизации трафика по их лейблам
   selector:
@@ -19,4 +19,3 @@ spec:
     protocol: TCP                 # TCP или UDP
     port: 8080                    # Порт, на котором сервис принимает запросы
     targetPort: 8080              # Порт контейнера в поде
-    nodePort: 30001 # Доступен с хоста

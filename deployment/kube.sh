@@ -65,6 +65,7 @@ kubectl apply -f deployment/worker/deployment.yaml -n gophprofile
 kubectl apply -f deployment/app/configmap.yaml -n gophprofile
 kubectl apply -f deployment/app/deployment.yaml -n gophprofile
 kubectl apply -f deployment/app/service.yaml -n gophprofile
+kubectl apply -f deployment/app/ingress.yaml -n gophprofile
 
 # Проброс портов (cheetsheet)
 # kubectl port-forward service/minio 9001:9001 -n gophprofile
@@ -72,3 +73,9 @@ kubectl apply -f deployment/app/service.yaml -n gophprofile
 # kubectl port-forward service/jaeger 16686:16686 -n gophprofile
 # kubectl port-forward service/prometheus 9090:9090 -n gophprofile
 # kubectl port-forward service/grafana 3000:3000 -n gophprofile
+
+# Рестарт
+# kubectl rollout restart deployment gophprofile-app -n gophprofile
+
+# Заметки
+# Внести "127.0.0.1 gophprofile.loc" в /etc/hosts
