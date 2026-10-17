@@ -49,6 +49,18 @@ kubectl apply -f deployment/otel_collector/configmap.yaml -n gophprofile
 kubectl apply -f deployment/otel_collector/deployment.yaml -n gophprofile
 kubectl apply -f deployment/otel_collector/service.yaml -n gophprofile
 
+# Собираем приложение
+docker build -t gophprofile .
+docker tag gophprofile gophprofile:1.0
+# Смотрим список кластеров
+# k3d cluster list
+# Импортируем собранный образ в кластер
+k3d image import gophprofile:1.0 -c local
+
+# Apply для Worker
+kubectl apply -f deployment/worker/configmap.yaml -n gophprofile
+kubectl apply -f deployment/worker/deployment.yaml -n gophprofile
+
 
 # Проброс портов (cheetsheet)
 # kubectl port-forward service/minio 9001:9001 -n gophprofile

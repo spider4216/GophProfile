@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gophprofile       # Имя Deployment
+  labels:
+    app: gophprofile      # Лейблы Deployment
+    version: '1.0'
+spec:
+  replicas: 1          # Одна пода с postgres
+  selector:
+    matchLabels:
+      app: gophprofile    # По этим лейблам Deployment будет связан с контейнером
+      version: '1.0'      
+  template:
+    metadata:
+      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+        app: gophprofile
+        version: '1.0'
+    spec:
+      containers:                      # Описание контейнера
+      - name: gophprofile                 # Имя контейнера
+        image: gophprofile:1.0            # Образ и версия образа
+        imagePullPolicy: Never  # Политика скачивания образа (запрещаем внешку)
+        command: ["/root/worker"]
+        ports:
+        - containerPort: 8081          # Порт контейнера
+        envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
+          - configMapRef:
+              name: gophprofile             # Название configmap
