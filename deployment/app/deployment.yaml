@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: Never  # Политика скачивания образа (запрещаем внешку)
         command: ["/root/server"]
         ports:
-        - containerPort: 80          # Порт контейнера
+        - containerPort: 8080          # Порт контейнера
         envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
           - configMapRef:
               name: gophprofile-app             # Название configmap
