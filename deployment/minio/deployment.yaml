@@ -29,8 +29,8 @@ spec:
           - name: web
             containerPort: 9001
         envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
-          - configMapRef:
-              name: minio              # Название configmap
+          - secretRef:
+              name: minio-secret
         volumeMounts:
             - name: minio-data
               mountPath: /data

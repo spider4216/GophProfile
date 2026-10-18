@@ -17,7 +17,7 @@ kubectl apply -f deployment/postgres/configmap.yaml --namespace=gophprofile
 
 # Apply для Minio
 kubectl apply -f deployment/minio/minio-pvc.yaml --namespace=gophprofile
-kubectl apply -f deployment/minio/configmap.yaml --namespace=gophprofile
+kubectl apply -f deployment/minio/secret.yaml --namespace=gophprofile
 kubectl apply -f deployment/minio/deployment.yaml --namespace=gophprofile
 kubectl apply -f deployment/minio/service.yaml --namespace=gophprofile
 
