@@ -3,13 +3,9 @@ kind: ConfigMap
 metadata:
   name: gophprofile-app
 data:
-  DB_DSN: postgres://postgres:postgres@postgres:5432/gophprofile # todo to secret
   LOG_LEVEL: debug
   SERVER_ADDRESS: 0.0.0.0:8080
-  RABBIT_DSN: amqp://guest:guest@rabbitmq:5672/ # todo to secret
   MINIO_HOST: http://minio:9000
-  MINIO_ROOT_USER: minio # todo to secret
-  MINIO_ROOT_PASSWORD: minio123 # todo to secret
   OTEL_SERVICE_NAME: app
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
