@@ -50,6 +50,7 @@ kubectl apply -k . -n gophprofile
 kubectl apply -f deployment/loki/loki-pvc.yaml -n gophprofile
 kubectl apply -f deployment/loki/configmap.yaml -n gophprofile
 kubectl apply -f deployment/loki/service.yaml -n gophprofile
+kubectl apply -f deployment/loki/netpol.yaml -n gophprofile
 
 kubectl apply -f deployment/otel_collector/configmap.yaml -n gophprofile
 kubectl apply -f deployment/otel_collector/deployment.yaml -n gophprofile
@@ -93,3 +94,4 @@ kubectl apply -f deployment/app/ingress.yaml -n gophprofile
 # Проверить доступность из одной поды в другую
 # nc -vz postgres 5432
 # nc -vz minio 9000
+# nc -vz loki 3100
