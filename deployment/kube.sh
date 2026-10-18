@@ -21,6 +21,7 @@ kubectl apply -f deployment/minio/minio-pvc.yaml --namespace=gophprofile
 kubectl apply -f deployment/minio/secret.yaml --namespace=gophprofile
 kubectl apply -f deployment/minio/deployment.yaml --namespace=gophprofile
 kubectl apply -f deployment/minio/service.yaml --namespace=gophprofile
+kubectl apply -f deployment/minio/netpol.yaml --namespace=gophprofile
 
 # Apply для Rabbitmq
 kubectl apply -f deployment/rabbitmq/rabbitmq-pvc.yaml -n gophprofile
@@ -91,3 +92,4 @@ kubectl apply -f deployment/app/ingress.yaml -n gophprofile
 # Cheet sheet
 # Проверить доступность из одной поды в другую
 # nc -vz postgres 5432
+# nc -vz minio 9000
