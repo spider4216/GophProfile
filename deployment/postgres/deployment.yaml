@@ -26,3 +26,5 @@ spec:
         envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
           - configMapRef:
               name: postgres             # Название configmap
+          - secretRef:
+              name: postgres-secret

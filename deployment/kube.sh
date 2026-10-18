@@ -10,6 +10,7 @@ kubectl create ns gophprofile
 kubectl apply -f deployment/shared/persistent.yaml -n gophprofile
 
 # Apply для Postgres
+kubectl apply -f deployment/postgres/secret.yaml -n gophprofile
 kubectl apply -f deployment/postgres/deployment.yaml --namespace=gophprofile
 kubectl apply -f deployment/postgres/service.yaml --namespace=gophprofile
 kubectl apply -f deployment/postgres/configmap.yaml --namespace=gophprofile
