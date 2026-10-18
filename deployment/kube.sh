@@ -69,6 +69,7 @@ kubectl apply -f deployment/worker/deployment.yaml -n gophprofile
 # Apply для самого app
 kubectl apply -f deployment/app/secret.yaml -n gophprofile
 kubectl apply -f deployment/app/configmap.yaml -n gophprofile
+kubectl apply -f deployment/app/hpa.yaml -n gophprofile
 kubectl apply -f deployment/app/deployment.yaml -n gophprofile
 kubectl apply -f deployment/app/service.yaml -n gophprofile
 kubectl apply -f deployment/app/ingress.yaml -n gophprofile

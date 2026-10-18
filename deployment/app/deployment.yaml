@@ -16,6 +16,7 @@ spec:
       labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
         app: gophprofile-app
         version: '1.0'
+    
     spec:
       containers:                      # Описание контейнера
       - name: gophprofile-app                 # Имя контейнера
@@ -24,14 +25,41 @@ spec:
         command: ["/root/server"]
         ports:
         - containerPort: 8080          # Порт контейнера
+
+        resources:
+          requests:
+            cpu: 50m
+            memory: 32Mi
+          limits:
+            cpu: 500m
+            memory: 128Mi
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+
         envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
           - configMapRef:
               name: gophprofile-app             # Название configmap
           - secretRef:
               name: gophprofile-app-secret
+        
         volumeMounts:
             - name: shared-tmp
               mountPath: /tmp
+      
       volumes:
         - name: shared-tmp
           persistentVolumeClaim:
