@@ -1,0 +1,25 @@
+# Network Policy для Postgres
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-netpol
+  namespace: gophprofile
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+
+  policyTypes:
+    - Ingress
+
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: gophprofile-app
+        - podSelector:
+            matchLabels:
+              app: gophprofile
+      ports:
+        - protocol: TCP
+          port: 5432

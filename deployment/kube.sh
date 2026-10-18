@@ -10,10 +10,11 @@ kubectl create ns gophprofile
 kubectl apply -f deployment/shared/persistent.yaml -n gophprofile
 
 # Apply для Postgres
+kubectl apply -f deployment/postgres/configmap.yaml --namespace=gophprofile
 kubectl apply -f deployment/postgres/secret.yaml -n gophprofile
 kubectl apply -f deployment/postgres/deployment.yaml --namespace=gophprofile
 kubectl apply -f deployment/postgres/service.yaml --namespace=gophprofile
-kubectl apply -f deployment/postgres/configmap.yaml --namespace=gophprofile
+kubectl apply -f deployment/postgres/netpol.yaml --namespace=gophprofile
 
 # Apply для Minio
 kubectl apply -f deployment/minio/minio-pvc.yaml --namespace=gophprofile
@@ -86,3 +87,7 @@ kubectl apply -f deployment/app/ingress.yaml -n gophprofile
 
 # Заметки
 # Внести "127.0.0.1 gophprofile.loc" в /etc/hosts
+
+# Cheet sheet
+# Проверить доступность из одной поды в другую
+# nc -vz postgres 5432
