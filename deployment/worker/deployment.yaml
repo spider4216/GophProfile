@@ -27,6 +27,8 @@ spec:
         envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
           - configMapRef:
               name: gophprofile             # Название configmap
+          - secretRef:
+              name: gophprofile-secret
         volumeMounts:
             - name: shared-tmp
               mountPath: /tmp

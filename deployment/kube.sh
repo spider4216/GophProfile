@@ -62,6 +62,7 @@ docker tag gophprofile gophprofile:1.0
 k3d image import gophprofile:1.0 -c local
 
 # Apply для Worker
+kubectl apply -f deployment/worker/secret.yaml -n gophprofile
 kubectl apply -f deployment/worker/configmap.yaml -n gophprofile
 kubectl apply -f deployment/worker/deployment.yaml -n gophprofile
 
