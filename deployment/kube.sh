@@ -53,9 +53,11 @@ kubectl apply -f deployment/loki/configmap.yaml -n gophprofile
 kubectl apply -f deployment/loki/service.yaml -n gophprofile
 kubectl apply -f deployment/loki/netpol.yaml -n gophprofile
 
+# Apply для коллектора
 kubectl apply -f deployment/otel_collector/configmap.yaml -n gophprofile
 kubectl apply -f deployment/otel_collector/deployment.yaml -n gophprofile
 kubectl apply -f deployment/otel_collector/service.yaml -n gophprofile
+kubectl apply -f deployment/otel_collector/netpol.yaml -n gophprofile
 
 # Собираем приложение
 docker build -t gophprofile .

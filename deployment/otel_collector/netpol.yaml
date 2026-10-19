@@ -1,0 +1,34 @@
+# Network Policy для Postgres
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otel-collector-netpol
+  namespace: gophprofile
+spec:
+  podSelector:
+    matchLabels:
+      app: otel-collector
+
+  policyTypes:
+    - Ingress
+
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: gophprofile-app
+        - podSelector:
+            matchLabels:
+              app: gophprofile
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 4318
+    - from:
+      - podSelector:
+          matchLabels:
+            app: prometheus
+      ports:
+        - protocol: TCP
+          port: 8889
