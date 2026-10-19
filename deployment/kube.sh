@@ -76,6 +76,7 @@ kubectl apply -f deployment/app/hpa.yaml -n gophprofile
 kubectl apply -f deployment/app/deployment.yaml -n gophprofile
 kubectl apply -f deployment/app/service.yaml -n gophprofile
 kubectl apply -f deployment/app/ingress.yaml -n gophprofile
+kubectl apply -f deployment/app/netpol.yaml -n gophprofile
 
 # Проброс портов (cheetsheet)
 # kubectl port-forward service/minio 9001:9001 -n gophprofile
@@ -95,3 +96,4 @@ kubectl apply -f deployment/app/ingress.yaml -n gophprofile
 # nc -vz postgres 5432
 # nc -vz minio 9000
 # nc -vz loki 3100
+# nc -vz gophprofile-app 8080
