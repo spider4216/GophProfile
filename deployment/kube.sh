@@ -28,6 +28,7 @@ kubectl apply -f deployment/rabbitmq/rabbitmq-pvc.yaml -n gophprofile
 kubectl apply -f deployment/rabbitmq/configmap.yaml -n gophprofile
 kubectl apply -f deployment/rabbitmq/deployment.yaml -n gophprofile
 kubectl apply -f deployment/rabbitmq/service.yaml -n gophprofile
+kubectl apply -f deployment/rabbitmq/netpol.yaml -n gophprofile
 
 # Apply для node-exporter
 kubectl apply -f deployment/node_exporter/deployment.yaml -n gophprofile
