@@ -32,6 +32,7 @@ kubectl apply -f deployment/rabbitmq/service.yaml -n gophprofile
 # Apply для node-exporter
 kubectl apply -f deployment/node_exporter/deployment.yaml -n gophprofile
 kubectl apply -f deployment/node_exporter/service.yaml -n gophprofile
+kubectl apply -f deployment/node_exporter/netpol.yaml -n gophprofile
 
 # Apply для Jaeger
 kubectl apply -f deployment/jaeger/deployment.yaml -n gophprofile
