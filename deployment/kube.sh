@@ -36,6 +36,7 @@ kubectl apply -f deployment/node_exporter/service.yaml -n gophprofile
 # Apply для Jaeger
 kubectl apply -f deployment/jaeger/deployment.yaml -n gophprofile
 kubectl apply -f deployment/jaeger/service.yaml -n gophprofile
+kubectl apply -f deployment/jaeger/netpol.yaml -n gophprofile
 
 # Apply для Prometheus
 kubectl apply -f deployment/prometheus/configmap.yaml -n gophprofile
@@ -100,3 +101,4 @@ kubectl apply -f deployment/app/netpol.yaml -n gophprofile
 # nc -vz minio 9000
 # nc -vz loki 3100
 # nc -vz gophprofile-app 8080
+# nc -vz jaeger 16686
