@@ -43,6 +43,7 @@ kubectl apply -f deployment/jaeger/netpol.yaml -n gophprofile
 kubectl apply -f deployment/prometheus/configmap.yaml -n gophprofile
 kubectl apply -f deployment/prometheus/deployment.yaml -n gophprofile
 kubectl apply -f deployment/prometheus/service.yaml -n gophprofile
+kubectl apply -f deployment/prometheus/netpol.yaml -n gophprofile
 
 # Apply для Grafana
 kubectl apply -f deployment/grafana/grafana-pvc.yaml -n gophprofile
