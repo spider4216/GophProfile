@@ -45,6 +45,7 @@ kubectl apply -f deployment/prometheus/service.yaml -n gophprofile
 # Apply для Grafana
 kubectl apply -f deployment/grafana/grafana-pvc.yaml -n gophprofile
 kubectl apply -k . -n gophprofile
+kubectl apply -f deployment/grafana/netpol.yaml -n gophprofile
 
 # Apply для Loki
 kubectl apply -f deployment/loki/loki-pvc.yaml -n gophprofile
