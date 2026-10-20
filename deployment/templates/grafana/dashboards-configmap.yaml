@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+data:
+  dashboards.yml: |-
+    {{- .Files.Get "files/grafana/provisioning/dashboards/dashboards.yml" | nindent 4 }}
+  kpi-dashboard.json: |-
+    {{- .Files.Get "files/grafana/provisioning/dashboards/kpi-dashboard.json" | nindent 4 }}
+  overview-dashboard.json: |-
+    {{- .Files.Get "files/grafana/provisioning/dashboards/overview-dashboard.json" | nindent 4 }}
+  red-dashboard.json: |-
+    {{- .Files.Get "files/grafana/provisioning/dashboards/red-dashboard.json" | nindent 4 }}

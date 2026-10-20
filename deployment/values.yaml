@@ -1,0 +1,4 @@
+postgres:
+  image:
+    repository: postgres
+    tag: "18"

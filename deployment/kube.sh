@@ -106,3 +106,20 @@ kubectl apply -f deployment/app/netpol.yaml -n gophprofile
 # nc -vz loki 3100
 # nc -vz gophprofile-app 8080
 # nc -vz jaeger 16686
+
+# Helm
+
+# Линтим Chart
+# helm lint .
+
+# Смотрим шаблон без применения
+# helm template gophprofile . -n gophprofile
+
+# Установка
+# helm upgrade --install gophprofile . --namespace gophprofile --create-namespace
+
+# Посмотреть установленный Chart
+# helm list -n gophprofile
+
+# Удаление релиза
+# helm uninstall gophprofile -n gophprofile
