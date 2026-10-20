@@ -22,4 +22,4 @@ spec:
               app: gophprofile
       ports:
         - protocol: TCP
-          port: 5432
+          port: {{ .Values.postgres.containerPort }}

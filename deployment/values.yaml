@@ -4,3 +4,6 @@ postgres:
     tag: "18"
   replicas: 1
   containerPort: 5432
+  service:
+    port: 5432
+  dbName: "gophprofile"

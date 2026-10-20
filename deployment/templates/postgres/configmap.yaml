@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: postgres
 data:
-  POSTGRES_DB: gophprofile
+  POSTGRES_DB: "{{ .Values.postgres.dbName }}"

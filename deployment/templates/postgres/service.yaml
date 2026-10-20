@@ -15,7 +15,7 @@ spec:
 
   # Порты сервиса
   ports:
-  - name: http                    # Уникальное имя порта (для DNS SRV записей)
-    protocol: TCP                 # TCP или UDP
-    port: 5432                    # Порт, на котором сервис принимает запросы
-    targetPort: 5432              # Порт контейнера в поде
+  - name: http
+    protocol: TCP
+    port: {{ .Values.postgres.service.port }}
+    targetPort: {{ .Values.postgres.containerPort }}
