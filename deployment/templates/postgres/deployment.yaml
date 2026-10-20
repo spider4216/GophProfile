@@ -19,7 +19,7 @@ spec:
     spec:
       containers:                      # Описание контейнера
       - name: postgres                 # Имя контейнера
-        image: postgres:18             # Образ и версия образа
+        image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"             # Образ и версия образа
         imagePullPolicy: IfNotPresent  # Политика скачивания образа
         ports:
         - containerPort: 5432          # Порт контейнера

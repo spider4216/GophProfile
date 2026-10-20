@@ -118,6 +118,9 @@ kubectl apply -f deployment/app/netpol.yaml -n gophprofile
 # Установка
 # helm upgrade --install gophprofile . --namespace gophprofile --create-namespace
 
+# Обновление
+# helm upgrade gophprofile . -n gophprofile
+
 # Посмотреть установленный Chart
 # helm list -n gophprofile
 
