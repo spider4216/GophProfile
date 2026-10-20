@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: grafana       # Имя Deployment
+  name: grafana
   labels:
-    app: grafana      # Лейблы Deployment
+    app: grafana
     version: '1.0'
 spec:
-  replicas: 1          # Одна пода с postgres
+  replicas: {{ .Values.grafana.replicas }}
   selector:
     matchLabels:
-      app: grafana    # По этим лейблам Deployment будет связан с контейнером
-      version: '1.0'      
+      app: grafana
+      version: '1.0'
   template:
     metadata:
-      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+      labels:
         app: grafana
         version: '1.0'
     spec:
-      containers:                        # Описание контейнера
-      - name: grafana                   # Имя контейнера
-        image: grafana/grafana:12.3.1  # Образ и версия образа
-        imagePullPolicy: IfNotPresent    # Политика скачивания образа
+      containers:
+      - name: grafana
+        image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
+        imagePullPolicy: IfNotPresent
         ports:
-          - containerPort: 3000        # Порт контейнера с api
+          - containerPort: {{ .Values.grafana.containerPort }}
         volumeMounts:
             # Постоянное хранилище Grafana
             - name: grafana-data

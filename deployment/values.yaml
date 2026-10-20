@@ -48,3 +48,14 @@ app:
   
   service:
     port: 8080
+
+grafana:
+  image:
+    repository: grafana/grafana
+    tag: "12.3.1"
+  replicas: 1
+  containerPort: 3000
+  service:
+    port: 3000
+  pvc:
+    storage: "100Mi"
