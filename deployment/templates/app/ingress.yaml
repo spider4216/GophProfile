@@ -15,4 +15,4 @@ spec:
           service:
             name: gophprofile-app
             port:
-              number: 8080
+              number: {{ .Values.app.service.port }}

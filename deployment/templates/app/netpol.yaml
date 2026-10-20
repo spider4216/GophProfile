@@ -21,4 +21,4 @@ spec:
               app.kubernetes.io/name: traefik
       ports:
         - protocol: TCP
-          port: 8080
+          port: {{ .Values.app.containerPort }}

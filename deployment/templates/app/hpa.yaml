@@ -8,8 +8,8 @@ spec:
     kind: Deployment
     name: gophprofile-app
 
-  minReplicas: 1
-  maxReplicas: 3
+  minReplicas: {{ .Values.app.hpa.minReplicas }}
+  maxReplicas: {{ .Values.app.hpa.maxReplicas }}
 
   metrics:
     - type: Resource
@@ -17,11 +17,11 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 70
+          averageUtilization: {{ .Values.app.hpa.cpu.averageUtilization }}
 
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: 80
+          averageUtilization: {{ .Values.app.hpa.memory.averageUtilization }}

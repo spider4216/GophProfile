@@ -1,58 +1,58 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gophprofile-app       # Имя Deployment
+  name: gophprofile-app
   labels:
-    app: gophprofile-app      # Лейблы Deployment
+    app: gophprofile-app
     version: '1.0'
 spec:
-  replicas: 1          # Одна пода с postgres
+  replicas: {{ .Values.app.replicas }}
   selector:
     matchLabels:
-      app: gophprofile-app    # По этим лейблам Deployment будет связан с контейнером
+      app: gophprofile-app
       version: '1.0'      
   template:
     metadata:
-      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+      labels:
         app: gophprofile-app
         version: '1.0'
     
     spec:
-      containers:                      # Описание контейнера
-      - name: gophprofile-app                 # Имя контейнера
-        image: gophprofile:1.0            # Образ и версия образа
-        imagePullPolicy: Never  # Политика скачивания образа (запрещаем внешку)
-        command: ["/root/server"]
+      containers:
+      - name: gophprofile-app
+        image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
+        imagePullPolicy: Never
+        command: {{ .Values.app.command }}
         ports:
-        - containerPort: 8080          # Порт контейнера
+        - containerPort: {{ .Values.app.containerPort }}
 
         resources:
           requests:
-            cpu: 50m
-            memory: 32Mi
+            cpu: "{{ .Values.app.resources.requests.cpu }}"
+            memory: "{{ .Values.app.resources.requests.memory }}"
           limits:
-            cpu: 500m
-            memory: 128Mi
+            cpu: "{{ .Values.app.resources.limits.cpu }}"
+            memory: "{{ .Values.app.resources.limits.memory }}"
 
         livenessProbe:
           httpGet:
-            path: /health
-            port: 8080
-          periodSeconds: 10
-          timeoutSeconds: 2
-          failureThreshold: 3
+            path: "{{ .Values.app.livenessProbe.httpGet.path }}"
+            port: {{ .Values.app.livenessProbe.httpGet.port }}
+          periodSeconds: {{ .Values.app.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.app.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.app.livenessProbe.failureThreshold }}
         
         readinessProbe:
           httpGet:
-            path: /health
-            port: 8080
-          periodSeconds: 5
-          timeoutSeconds: 2
-          failureThreshold: 3
+            path: "{{ .Values.app.readinessProbe.httpGet.path }}"
+            port: {{ .Values.app.readinessProbe.httpGet.port }}
+          periodSeconds: {{ .Values.app.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.app.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.app.readinessProbe.failureThreshold }}
 
-        envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
+        envFrom:
           - configMapRef:
-              name: gophprofile-app             # Название configmap
+              name: gophprofile-app
           - secretRef:
               name: gophprofile-app-secret
         

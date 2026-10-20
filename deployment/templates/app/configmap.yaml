@@ -4,7 +4,7 @@ metadata:
   name: gophprofile-app
 data:
   LOG_LEVEL: debug
-  SERVER_ADDRESS: 0.0.0.0:8080
+  SERVER_ADDRESS: "0.0.0.0:{{ .Values.app.containerPort }}"
   MINIO_HOST: http://minio:9000
   OTEL_SERVICE_NAME: app
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development
