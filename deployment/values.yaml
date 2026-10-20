@@ -2,3 +2,5 @@ postgres:
   image:
     repository: postgres
     tag: "18"
+  replicas: 1
+  containerPort: 5432

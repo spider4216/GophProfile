@@ -1,30 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres       # Имя Deployment
+  name: postgres
   labels:
-    app: postgres      # Лейблы Deployment
+    app: postgres
     version: '1.0'
 spec:
-  replicas: 1          # Одна пода с postgres
+  replicas: {{ .Values.postgres.replicas }}
   selector:
     matchLabels:
-      app: postgres    # По этим лейблам Deployment будет связан с контейнером
+      app: postgres
       version: '1.0'      
   template:
     metadata:
-      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+      labels:
         app: postgres
         version: '1.0'
     spec:
-      containers:                      # Описание контейнера
-      - name: postgres                 # Имя контейнера
-        image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"             # Образ и версия образа
-        imagePullPolicy: IfNotPresent  # Политика скачивания образа
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+        imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 5432          # Порт контейнера
-        envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
+        - containerPort: {{ .Values.postgres.containerPort }}
+        envFrom:
           - configMapRef:
-              name: postgres             # Название configmap
+              name: postgres
           - secretRef:
               name: postgres-secret
