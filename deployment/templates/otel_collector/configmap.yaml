@@ -30,7 +30,7 @@ data:
         tls:
           insecure: true
       prometheus:
-        endpoint: '0.0.0.0:8889'
+        endpoint: '0.0.0.0:{{ .Values.otel_collector.service.ports.prometheusPort }}'
       otlp/traces:
         endpoint: 'jaeger:{{ .Values.jaeger.service.otlpGRPCPort }}'
         tls:

@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: minio          # Имя Deployment
+  name: minio
   labels:
-    app: minio         # Лейблы Deployment
+    app: minio
     version: '1.0'
 spec:
   replicas: {{ .Values.minio.replicas }}
   selector:
     matchLabels:
-      app: minio       # По этим лейблам Deployment будет связан с контейнером
+      app: minio
       version: '1.0'      
   template:
     metadata:
-      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+      labels:
         app: minio
         version: '1.0'
     spec:
-      containers:                                               # Описание контейнера
-      - name: minio                                             # Имя контейнера
+      containers:
+      - name: minio
         image: "{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}"
-        imagePullPolicy: IfNotPresent                           # Политика скачивания образа
+        imagePullPolicy: IfNotPresent
         command: {{- toYaml .Values.minio.command | nindent 12 }}
         args: {{- toYaml .Values.minio.args | nindent 12 }}
         ports:
@@ -28,7 +28,7 @@ spec:
             containerPort: {{ .Values.minio.ports.api }}
           - name: web
             containerPort: {{ .Values.minio.ports.web }}
-        envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
+        envFrom:
           - secretRef:
               name: minio-secret
         volumeMounts:
