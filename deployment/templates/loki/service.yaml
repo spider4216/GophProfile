@@ -15,7 +15,7 @@ spec:
 
   # Порты сервиса
   ports:
-  - name: loki-port               # Уникальное имя порта (для DNS SRV записей)
-    protocol: TCP                 # TCP или UDP
-    port: 3100                    # Порт, на котором сервис принимает запросы
-    targetPort: 3100              # Порт контейнера в поде
+  - name: loki-port
+    protocol: TCP
+    port: {{ .Values.loki.service.servicePort }}
+    targetPort: {{ .Values.loki.containerPort }}

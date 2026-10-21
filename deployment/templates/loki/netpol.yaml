@@ -22,4 +22,4 @@ spec:
               app: grafana
       ports:
         - protocol: TCP
-          port: 3100
+          port: {{ .Values.loki.containerPort }}

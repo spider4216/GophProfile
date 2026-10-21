@@ -69,3 +69,17 @@ jaeger:
     containerPort: 16686
     otlpGRPCPort: 4317
     otlpHTTPPort: 4318
+  service:
+    servicePort: 16686
+    otlpGRPCPort: 4317
+
+loki:
+  image:
+    repository: grafana/loki
+    tag: "3.6.3"
+  replicas: 1
+  containerPort: 3100
+  pvc:
+    storage: "100Mi"
+  service:
+    servicePort: 3100
