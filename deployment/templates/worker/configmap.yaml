@@ -4,10 +4,10 @@ metadata:
   name: gophprofile
 data:
   LOG_LEVEL: debug
-  MINIO_HOST: http://minio:9000
+  MINIO_HOST: http://minio:{{ .Values.minio.service.port.api }}
   OTEL_SERVICE_NAME: worker
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:{{ .Values.otel_collector.service.ports.grpcPort }}
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:{{ .Values.otel_collector.service.ports.httpPort }}/v1/metrics
   OTEL_EXPORTER_OTLP_COMPRESSION: gzip
   OTEL_EXPORTER_OTLP_INSECURE: "true"

@@ -1,32 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gophprofile       # Имя Deployment
+  name: gophprofile
   labels:
-    app: gophprofile      # Лейблы Deployment
+    app: gophprofile
     version: '1.0'
 spec:
-  replicas: 1          # Одна пода с postgres
+  replicas: {{ .Values.worker.replicas }}
   selector:
     matchLabels:
-      app: gophprofile    # По этим лейблам Deployment будет связан с контейнером
+      app: gophprofile
       version: '1.0'      
   template:
     metadata:
-      labels:          # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+      labels:
         app: gophprofile
         version: '1.0'
     spec:
-      containers:                      # Описание контейнера
-      - name: gophprofile                 # Имя контейнера
-        image: gophprofile:1.0            # Образ и версия образа
-        imagePullPolicy: Never  # Политика скачивания образа (запрещаем внешку)
-        command: ["/root/worker"]
+      containers:
+      - name: gophprofile
+        image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+        imagePullPolicy: Never
+        command: {{ .Values.worker.command }}
         ports:
-        - containerPort: 8081          # Порт контейнера
-        envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
+        - containerPort: {{ .Values.worker.containerPort }}
+        envFrom:
           - configMapRef:
-              name: gophprofile             # Название configmap
+              name: gophprofile
           - secretRef:
               name: gophprofile-secret
         volumeMounts:

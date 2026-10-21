@@ -153,3 +153,11 @@ rabbitmq:
 
 shared:
   storage: "100Mi"
+
+worker:
+  image:
+    repository: gophprofile
+    tag: "1.0"
+  replicas: 1
+  command: ["/root/worker"]
+  containerPort: 8081
