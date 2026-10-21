@@ -6,7 +6,7 @@ metadata:
     app: minio         # Лейблы Deployment
     version: '1.0'
 spec:
-  replicas: 1          # Одна пода с postgres
+  replicas: {{ .Values.minio.replicas }}
   selector:
     matchLabels:
       app: minio       # По этим лейблам Deployment будет связан с контейнером
@@ -19,15 +19,15 @@ spec:
     spec:
       containers:                                               # Описание контейнера
       - name: minio                                             # Имя контейнера
-        image: cgr.dev/chainguard/minio:latest                  # Образ и версия образа
+        image: "{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}"
         imagePullPolicy: IfNotPresent                           # Политика скачивания образа
-        command: ["minio"]                                      # Команда запуска
-        args: ["server", "/data", "--console-address", ":9001"] # Аргументы для команды запуска
+        command: {{- toYaml .Values.minio.command | nindent 12 }}
+        args: {{- toYaml .Values.minio.args | nindent 12 }}
         ports:
           - name: api
-            containerPort: 9000          # Порт контейнера с api
+            containerPort: {{ .Values.minio.ports.api }}
           - name: web
-            containerPort: 9001
+            containerPort: {{ .Values.minio.ports.web }}
         envFrom:                       # Все ключи ConfigMap будут использованы как переменные окружения контейнера
           - secretRef:
               name: minio-secret

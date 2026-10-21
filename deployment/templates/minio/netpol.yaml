@@ -22,4 +22,4 @@ spec:
               app: gophprofile
       ports:
         - protocol: TCP
-          port: 9000
+          port: {{ .Values.minio.ports.api }}

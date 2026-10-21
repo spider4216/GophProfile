@@ -83,3 +83,20 @@ loki:
     storage: "100Mi"
   service:
     servicePort: 3100
+
+minio:
+  image:
+    repository: cgr.dev/chainguard/minio
+    tag: "latest"
+  replicas: 1
+  command: ["minio"]
+  args: ["server", "/data", "--console-address", ":9001"]
+  ports:
+    api: 9000
+    web: 9001
+  pvc:
+    storage: "200Mi"
+  service:
+    port:
+      api: 9000
+      web: 9001

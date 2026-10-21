@@ -15,9 +15,9 @@ spec:
 
   # Порты сервиса
   ports:
-  - name: api         # Уникальное имя порта (для DNS SRV записей)
-    port: 9000        # Порт, на котором сервис принимает запросы
-    targetPort: 9000  # Порт контейнера в поде
+  - name: api
+    port: {{ .Values.minio.service.port.api }}
+    targetPort: {{ .Values.minio.ports.api }}
   - name: web
-    port: 9001        # Порт для WEB
-    targetPort: 9001
+    port: {{ .Values.minio.service.port.web }}
+    targetPort: {{ .Values.minio.ports.web }}
