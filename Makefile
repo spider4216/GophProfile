@@ -50,3 +50,6 @@ up:
 
 up-build:
 	docker compose up --build
+
+swagger:
+	swag init -g cmd/server/main.go -d ./ -o docs --outputTypes yaml

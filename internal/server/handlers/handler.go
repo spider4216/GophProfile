@@ -43,6 +43,19 @@ func New(cfg *config.Config, logger *slog.Logger, service *services.Service, tra
 	}
 }
 
+// UploadAvatar godoc
+// @Summary      Загрузить аватар
+// @Description  Загружает изображение аватара пользователя. Файл временно сохраняется на сервере, после чего создаётся запись об аватаре и отправляется событие на загрузку в MinIO.
+// @Tags         Avatars
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        X-User-ID header string true "Идентификатор пользователя"
+// @Param        image formData file true "Файл изображения аватара"
+// @Success      201 {object} models.UploadResp "Аватар создан, загрузка в процессе"
+// @Failure      400 "Не передан файл или неподдерживаемый формат изображения"
+// @Failure      413 "Размер файла превышает допустимый"
+// @Failure      500 "Внутренняя ошибка сервера"
+// @Router       /avatars [post]
 func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx, span := h.tracer.Start(r.Context(), "UploadAvatar")
 	defer span.End()
@@ -144,6 +157,20 @@ func (h *Handler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetAvatar godoc
+// @Summary      Получить аватар
+// @Description  Возвращает изображение аватара или его миниатюру. Размер миниатюры задаётся параметром size.
+// @Tags         Avatars
+// @Produce      image/*
+// @Param        avatar_id path string true "UUID аватара"
+// @Param        size query string false "Размер миниатюры, например 100x100"
+// @Success      200 {file} file "Файл изображения"
+// @Failure      404 {object} models.GetNoAvaResp "Аватар не найден"
+// @Failure      500 "Внутренняя ошибка сервера"
+// @Header       200 {string} Content-Disposition "Имя файла"
+// @Header       200 {string} Cache-Control "Параметры кеширования"
+// @Header       200 {string} ETag "Хеш содержимого"
+// @Router       /avatars/{avatar_id} [get]
 func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx, span := h.tracer.Start(r.Context(), "GetAvatar")
 	defer span.End()
@@ -224,6 +251,16 @@ func (h *Handler) GetAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetMetaAvatar godoc
+// @Summary      Получить метаданные аватара
+// @Description  Возвращает метаданные аватара по его идентификатору.
+// @Tags         Avatars
+// @Produce      json
+// @Param        avatar_id path string true "UUID аватара"
+// @Success      200 {object} models.GetMetaResp "Метаданные аватара"
+// @Failure      404 "Аватар не найден"
+// @Failure      500 "Внутренняя ошибка сервера"
+// @Router       /avatars/{avatar_id}/metadata [get]
 func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx, span := h.tracer.Start(r.Context(), "GetMetadataAvatar")
 	defer span.End()
@@ -260,6 +297,20 @@ func (h *Handler) GetMetaAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetUserAvatar godoc
+// @Summary      Получить аватар пользователя
+// @Description  Возвращает последнее активное изображение пользователя или его миниатюру.
+// @Tags         Users, Avatars
+// @Produce      image/*
+// @Param        user_id path string true "Идентификатор пользователя"
+// @Param        size query string false "Размер миниатюры, например 100x100"
+// @Success      200 {file} file "Файл изображения"
+// @Failure      404 "Аватар пользователя не найден"
+// @Failure      500 "Внутренняя ошибка сервера"
+// @Header       200 {string} Content-Disposition "Имя файла"
+// @Header       200 {string} Cache-Control "Параметры кеширования"
+// @Header       200 {string} ETag "Хеш содержимого"
+// @Router       /users/{user_id}/avatar [get]
 func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	size := r.URL.Query().Get("size")
 	userID := r.PathValue("user_id")
@@ -311,6 +362,17 @@ func (h *Handler) GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeleteAvatar godoc
+// @Summary      Удалить аватар
+// @Description  Запускает удаление аватара пользователя через отправку события в брокер сообщений. Удалять можно только собственный аватар.
+// @Tags         Avatars
+// @Param        id path string true "UUID аватара"
+// @Param        X-User-ID header string true "Идентификатор пользователя"
+// @Success      204 "Аватар успешно помечен для удаления"
+// @Failure      403 {object} models.ForbiddenResp "Пользователь не является владельцем аватара"
+// @Failure      404 "Аватар не найден"
+// @Failure      500 "Внутренняя ошибка сервера"
+// @Router       /avatars/{id} [delete]
 func (h *Handler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 	ctx, span := h.tracer.Start(r.Context(), "DeleteAvatar")
 	defer span.End()
@@ -400,6 +462,17 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeleteUserAvatars godoc
+// @Summary      Удалить все аватары пользователя
+// @Description  Запускает асинхронное удаление всех аватаров указанного пользователя через отправку событий в брокер сообщений. Удалять аватары можно только от имени их владельца.
+// @Tags         Users, Avatars
+// @Param        user_id path string true "Идентификатор пользователя"
+// @Param        X-User-ID header string true "Идентификатор текущего пользователя"
+// @Success      204 "События удаления успешно отправлены"
+// @Failure      403 {object} models.ForbiddenResp "Текущий пользователь не является владельцем всех аватаров"
+// @Failure      404 "У пользователя нет аватаров"
+// @Failure      500 "Внутренняя ошибка сервера"
+// @Router       /users/{user_id}/avatar [delete]
 func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("user_id")
 
@@ -470,6 +543,16 @@ func (h *Handler) DeleteUserAvatars(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetUserAvatars godoc
+// @Summary      Получить все аватары пользователя
+// @Description  Возвращает список метаданных всех аватаров указанного пользователя.
+// @Tags         Users, Avatars
+// @Produce      json
+// @Param        user_id path string true "Идентификатор пользователя"
+// @Success      200 {array} models.GetMetaResp "Список метаданных аватаров"
+// @Failure      404 "У пользователя нет аватаров"
+// @Failure      500 "Внутренняя ошибка сервера"
+// @Router       /users/{user_id}/avatars [get]
 func (h *Handler) GetUserAvatars(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("user_id")
 	ctx, span := h.tracer.Start(r.Context(), "GetUserAvatars")
