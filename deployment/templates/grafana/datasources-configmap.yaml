@@ -4,4 +4,4 @@ metadata:
   name: grafana-datasources
 data:
   datasources.yml: |-
-    {{- .Files.Get "files/grafana/provisioning/datasources/datasources.yml" | nindent 4 }}
+    {{- tpl (.Files.Get "files/grafana/provisioning/datasources/datasources.yml") . | nindent 4 }}
