@@ -15,7 +15,7 @@ spec:
 
   # Порты сервиса
   ports:
-  - name: http                    # Уникальное имя порта (для DNS SRV записей)
-    protocol: TCP                 # TCP или UDP
-    port: 9100                    # Порт, на котором сервис принимает запросы
-    targetPort: 9100              # Порт контейнера в поде
+  - name: http
+    protocol: TCP
+    port: {{ .Values.node_exporter.service.port }}
+    targetPort: {{ .Values.node_exporter.containerPort }}

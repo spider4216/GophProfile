@@ -100,3 +100,12 @@ minio:
     port:
       api: 9000
       web: 9001
+
+node_exporter:
+  image:
+    repository: prom/node-exporter
+    tag: "latest"
+  replicas: 1
+  containerPort: 9100
+  service:
+    port: 9100
