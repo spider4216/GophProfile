@@ -8,9 +8,9 @@ data:
       otlp:
         protocols:
           grpc:
-            endpoint: 0.0.0.0:4317
+            endpoint: 0.0.0.0:{{ .Values.otel_collector.ports.containerGRPCPort }}
           http:
-            endpoint: 0.0.0.0:4318
+            endpoint: 0.0.0.0:{{ .Values.otel_collector.ports.containerHTTPPort }}
 
     processors:
       batch:
@@ -25,14 +25,14 @@ data:
 
     exporters:
       otlphttp/loki:
-        endpoint: http://loki:3100/otlp
+        endpoint: http://loki:{{ .Values.loki.service.servicePort }}/otlp
         compression: "gzip"
         tls:
           insecure: true
       prometheus:
         endpoint: '0.0.0.0:8889'
       otlp/traces:
-        endpoint: 'jaeger:4317'
+        endpoint: 'jaeger:{{ .Values.jaeger.service.otlpGRPCPort }}'
         tls:
           insecure: true
 

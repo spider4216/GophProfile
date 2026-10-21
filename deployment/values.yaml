@@ -109,3 +109,20 @@ node_exporter:
   containerPort: 9100
   service:
     port: 9100
+
+otel_collector:
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.143.0"
+  replicas: 1
+  ports:
+    containerGRPCPort: 4317
+    containerHTTPPort: 4318
+    containerPrometheusPort: 8889
+    containerHealthPort: 13133
+  service:
+    ports:
+      grpcPort: 4317
+      httpPort: 4318
+      prometheusPort: 8889
+      healthPort: 13133

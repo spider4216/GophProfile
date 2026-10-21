@@ -22,13 +22,13 @@ spec:
               app: gophprofile
       ports:
         - protocol: TCP
-          port: 4317
+          port: {{ .Values.otel_collector.ports.containerGRPCPort }}
         - protocol: TCP
-          port: 4318
+          port: {{ .Values.otel_collector.ports.containerHTTPPort }}
     - from:
       - podSelector:
           matchLabels:
             app: prometheus
       ports:
         - protocol: TCP
-          port: 8889
+          port: {{ .Values.otel_collector.ports.containerPrometheusPort }}

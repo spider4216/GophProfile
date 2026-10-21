@@ -15,15 +15,15 @@ spec:
 
   # Порты сервиса
   ports:
-  - name: grpc-port         # Уникальное имя порта (для DNS SRV записей)
-    port: 4317        # Порт, на котором сервис принимает запросы
-    targetPort: 4317  # Порт контейнера в поде
+  - name: grpc-port
+    port: {{ .Values.otel_collector.service.ports.grpcPort }}
+    targetPort: {{ .Values.otel_collector.ports.containerGRPCPort }}
   - name: http-port
-    port: 4318       
-    targetPort: 4318
+    port: {{ .Values.otel_collector.service.ports.httpPort }}       
+    targetPort: {{ .Values.otel_collector.ports.containerHTTPPort }}
   - name: prometheus-port
-    port: 8889       
-    targetPort: 8889
+    port: {{ .Values.otel_collector.service.ports.prometheusPort }}       
+    targetPort: {{ .Values.otel_collector.ports.containerPrometheusPort }}
   - name: health-port
-    port: 13133       
-    targetPort: 13133
+    port: {{ .Values.otel_collector.service.ports.healthPort }}       
+    targetPort: {{ .Values.otel_collector.ports.containerHealthPort }}
