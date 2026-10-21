@@ -126,3 +126,12 @@ otel_collector:
       httpPort: 4318
       prometheusPort: 8889
       healthPort: 13133
+
+prometheus:
+  image:
+    repository: prom/prometheus
+    tag: "latest"
+  replicas: 1
+  containerPort: 9090
+  service:
+    port: 9090

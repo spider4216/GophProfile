@@ -10,12 +10,12 @@ data:
     scrape_configs:
       - job_name: 'prometheus'
         static_configs:
-          - targets: ['prometheus:9090']
+          - targets: ['prometheus:{{ .Values.prometheus.service.port }}']
 
       - job_name: 'otel-collector'
         static_configs:
-          - targets: ['otel-collector:8889'] # Endpoint Prometheus-exporter Collector 
+          - targets: ['otel-collector:{{ .Values.otel_collector.service.prometheusPort }}'] # Endpoint Prometheus-exporter Collector 
       
       - job_name: 'node'
         static_configs:
-          - targets: ['node-exporter:9100']
+          - targets: ['node-exporter:{{ .Values.node_exporter.service.port }}']

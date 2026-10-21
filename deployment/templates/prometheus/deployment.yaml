@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: prometheus       # Имя Deployment
+  name: prometheus
   labels:
-    app: prometheus      # Лейблы Deployment
+    app: prometheus
     version: '1.0'
 spec:
-  replicas: 1          # Одна пода с postgres
+  replicas: {{ .Values.prometheus.replicas }}
   selector:
     matchLabels:
-      app: prometheus    # По этим лейблам Deployment будет связан с контейнером
+      app: prometheus
       version: '1.0'      
   template:
     metadata:
-      labels:           # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+      labels:
         app: prometheus
         version: '1.0'
     spec:
-      containers:                        # Описание контейнера
-      - name: prometheus                   # Имя контейнера
-        image: prom/prometheus:latest  # Образ и версия образа
-        imagePullPolicy: IfNotPresent    # Политика скачивания образа
+      containers:
+      - name: prometheus
+        image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
+        imagePullPolicy: IfNotPresent
         ports:
-          - containerPort: 9090        # Порт контейнера
+          - containerPort: {{ .Values.prometheus.containerPort }}
         volumeMounts:
             - name: prometheus-config
               mountPath: /etc/prometheus/prometheus.yml
