@@ -59,3 +59,13 @@ grafana:
     port: 3000
   pvc:
     storage: "100Mi"
+
+jaeger:
+  image:
+    repository: jaegertracing/all-in-one
+    tag: "latest"
+  replicas: 1
+  ports:
+    containerPort: 16686
+    otlpGRPCPort: 4317
+    otlpHTTPPort: 4318

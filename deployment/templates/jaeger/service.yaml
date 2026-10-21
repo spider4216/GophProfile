@@ -15,11 +15,11 @@ spec:
 
   # Порты сервиса
   ports:
-  - name: http                    # Уникальное имя порта (для DNS SRV записей)
-    protocol: TCP                 # TCP или UDP
-    port: 16686                   # Порт, на котором сервис принимает запросы
-    targetPort: 16686             # Порт контейнера в поде
+  - name: http
+    protocol: TCP
+    port: {{ .Values.jaeger.ports.containerPort }}
+    targetPort: {{ .Values.jaeger.ports.containerPort }}
   - name: otlp-grpc
     protocol: TCP
-    port: 4317
-    targetPort: 4317
+    port: {{ .Values.jaeger.ports.otlpGRPCPort }}
+    targetPort: {{ .Values.jaeger.ports.otlpGRPCPort }}

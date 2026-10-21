@@ -1,30 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jaeger       # Имя Deployment
+  name: jaeger
   labels:
-    app: jaeger      # Лейблы Deployment
+    app: jaeger
     version: '1.0'
 spec:
-  replicas: 1        # Одна пода с postgres
+  replicas: {{ .Values.jaeger.replicas }}
   selector:
     matchLabels:
-      app: jaeger    # По этим лейблам Deployment будет связан с контейнером
-      version: '1.0'      
+      app: jaeger
+      version: '1.0'
   template:
     metadata:
-      labels:        # Лейблы подов. Должны совпадать со spec.selector.matchLabels!
+      labels:
         app: jaeger
         version: '1.0'
     spec:
-      containers:                              # Описание контейнера
-      - name: jaeger                           # Имя контейнера
-        image: jaegertracing/all-in-one:latest # Образ и версия образа
-        imagePullPolicy: IfNotPresent          # Политика скачивания образа
+      containers:
+      - name: jaeger
+        image: "{{ .Values.jaeger.image.repository }}:{{ .Values.jaeger.image.tag }}"
+        imagePullPolicy: IfNotPresent
         ports:
         - name: http
-          containerPort: 16686                 # Порт контейнера
+          containerPort: {{ .Values.jaeger.ports.containerPort }}
         - name: otlp-grpc
-          containerPort: 4317
+          containerPort: {{ .Values.jaeger.ports.otlpGRPCPort }}
         - name: otlp-http
-          containerPort: 4318
+          containerPort: {{ .Values.jaeger.ports.otlpHTTPPort }}
