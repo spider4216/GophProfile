@@ -8,4 +8,4 @@ spec:
   storageClassName: local-path
   resources:
     requests:
-      storage: 100Mi
+      storage: "{{ .Values.shared.storage }}"

@@ -150,3 +150,6 @@ rabbitmq:
     ports:
       api: 5672
       web: 15672
+
+shared:
+  storage: "100Mi"
