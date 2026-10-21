@@ -22,4 +22,4 @@ spec:
               app: gophprofile
       ports:
         - protocol: TCP
-          port: 5672
+          port: {{ .Values.rabbitmq.ports.api }}

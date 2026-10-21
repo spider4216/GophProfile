@@ -15,9 +15,9 @@ spec:
 
   # Порты сервиса
   ports:
-  - name: api         # Уникальное имя порта (для DNS SRV записей)
-    port: 5672        # Порт, на котором сервис принимает запросы
-    targetPort: 5672  # Порт контейнера в поде
+  - name: api
+    port: {{ .Values.rabbitmq.service.ports.api }}
+    targetPort: {{ .Values.rabbitmq.ports.api }}
   - name: web
-    port: 15672       # Порт для WEB
-    targetPort: 15672
+    port: {{ .Values.rabbitmq.service.ports.web }}
+    targetPort: {{ .Values.rabbitmq.ports.web }}

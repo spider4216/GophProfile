@@ -135,3 +135,18 @@ prometheus:
   containerPort: 9090
   service:
     port: 9090
+
+rabbitmq:
+  image:
+    repository: rabbitmq
+    tag: "3.12-management"
+  replicas: 1
+  ports:
+    api: 5672
+    web: 15672
+  pvc:
+    storage: "100Mi"
+  service:
+    ports:
+      api: 5672
+      web: 15672
