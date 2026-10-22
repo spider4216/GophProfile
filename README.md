@@ -36,10 +36,16 @@ docker build -t gophprofile .
 docker tag gophprofile gophprofile:1.0
 ```
 
-Заием прокинуть образ в k8s
+Затем прокинуть образ в k8s
 
 ```bash
 k3d image import gophprofile:1.0 -c local
+```
+
+Добавить домент в `/etc/hosts`
+
+```text
+127.0.0.1   gophprofile.loc
 ```
 
 Затем запустить установку через helm
