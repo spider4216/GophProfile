@@ -10,28 +10,49 @@ spec:
   selector:
     matchLabels:
       app: gophprofile
-      version: '1.0'      
+      version: '1.0'
   template:
     metadata:
       labels:
         app: gophprofile
         version: '1.0'
     spec:
+      serviceAccountName: gophprofile
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+
       containers:
-      - name: gophprofile
-        image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
-        imagePullPolicy: Never
-        command: {{ .Values.worker.command }}
-        ports:
-        - containerPort: {{ .Values.worker.containerPort }}
-        envFrom:
-          - configMapRef:
-              name: gophprofile
-          - secretRef:
-              name: gophprofile-secret
-        volumeMounts:
+        - name: gophprofile
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+          imagePullPolicy: Never
+          command: {{ .Values.worker.command }}
+
+          ports:
+            - containerPort: {{ .Values.worker.containerPort }}
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          envFrom:
+            - configMapRef:
+                name: gophprofile
+            - secretRef:
+                name: gophprofile-secret
+
+          volumeMounts:
             - name: shared-tmp
               mountPath: /tmp
+
       volumes:
         - name: shared-tmp
           persistentVolumeClaim:

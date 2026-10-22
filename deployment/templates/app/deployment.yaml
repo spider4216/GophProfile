@@ -18,6 +18,16 @@ spec:
         version: '1.0'
     
     spec:
+      serviceAccountName: gophprofile
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+
       containers:
       - name: gophprofile-app
         image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
@@ -25,6 +35,13 @@ spec:
         command: {{ .Values.app.command }}
         ports:
         - containerPort: {{ .Values.app.containerPort }}
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
 
         resources:
           requests:
