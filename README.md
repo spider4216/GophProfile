@@ -29,6 +29,23 @@ GophProfile - сервис для хранения и предоставлени
 
 Приложение настроено под запуск в кластере и упаковано в Helm. Для запуска достаточно сделать следующее:
 
+Добавляем в `deployment/values-secret.yaml` секреты. Пример:
+
+```yaml
+secrets:
+  rabbitmq:
+    username: example
+    password: example
+
+  postgres:
+    username: example
+    password: example
+
+  minio:
+    username: example
+    password: example
+```
+
 Устанавливаем все что связано с мониторингом
 
 ```bash

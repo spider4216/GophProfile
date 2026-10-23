@@ -63,13 +63,13 @@ helm template gophprofile . -n gophprofile
 ## Установка
 
 ```bash
-helm upgrade --install gophprofile . --namespace gophprofile --create-namespace
+helm upgrade --install gophprofile . -f values-secret.yaml --namespace gophprofile --create-namespace
 ```
 
 ## Обновление
 
 ```
-helm upgrade gophprofile . -n gophprofile
+helm upgrade gophprofile . -f values-secret.yaml -n gophprofile
 ```
 
 ## Посмотреть установленный Chart
