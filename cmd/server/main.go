@@ -10,7 +10,6 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -88,7 +87,7 @@ func main() {
 
 	if err := runServer(srv, app.cfg, app.logger); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		app.logger.Error("Server error", "error", err)
-		os.Exit(1)
+		app.ctxStop()
 	}
 
 	wg.Wait()
