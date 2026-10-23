@@ -13,9 +13,9 @@ spec:
 
   ingress:
     - from:
-        - podSelector:
-            matchLabels:
-              app: prometheus
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: prometheus
       ports:
         - protocol: TCP
           port: {{ .Values.node_exporter.containerPort }}

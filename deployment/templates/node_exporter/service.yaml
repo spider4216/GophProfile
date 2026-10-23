@@ -15,7 +15,7 @@ spec:
 
   # Порты сервиса
   ports:
-  - name: http
+  - name: metrics
     protocol: TCP
     port: {{ .Values.node_exporter.service.port }}
     targetPort: {{ .Values.node_exporter.containerPort }}
