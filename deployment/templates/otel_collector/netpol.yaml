@@ -26,9 +26,9 @@ spec:
         - protocol: TCP
           port: {{ .Values.otel_collector.ports.containerHTTPPort }}
     - from:
-      - podSelector:
-          matchLabels:
-            app: prometheus
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
       ports:
         - protocol: TCP
           port: {{ .Values.otel_collector.ports.containerPrometheusPort }}

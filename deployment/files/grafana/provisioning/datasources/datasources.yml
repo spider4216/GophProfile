@@ -12,7 +12,7 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://prometheus:{{ .Values.prometheus.service.port }}
+    url: http://monitoring-kube-prometheus-prometheus:{{ .Values.prometheus.service.port }}
     isDefault: false
     editable: true
   - name: Jaeger

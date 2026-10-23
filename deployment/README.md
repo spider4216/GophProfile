@@ -39,6 +39,7 @@ kubectl port-forward service/rabbitmq 15672:15672 -n gophprofile
 kubectl port-forward service/jaeger 16686:16686 -n gophprofile
 kubectl port-forward service/prometheus 9090:9090 -n gophprofile
 kubectl port-forward service/grafana 3000:3000 -n gophprofile
+kubectl port-forward -n gophprofile pod/prometheus-monitoring-kube-prometheus-prometheus-0 9090:9090
 ```
 
 ## Проверить доступность из одной поды в другую
@@ -81,4 +82,10 @@ helm list -n gophprofile
 
 ```bash
 helm uninstall gophprofile -n gophprofile
+```
+
+## Посмотреть service monitor
+
+```bash
+kubectl get servicemonitor -n gophprofile
 ```

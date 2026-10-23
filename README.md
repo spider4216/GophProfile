@@ -29,6 +29,12 @@ GophProfile - сервис для хранения и предоставлени
 
 Приложение настроено под запуск в кластере и упаковано в Helm. Для запуска достаточно сделать следующее:
 
+Устанавливаем все что связано с мониторингом
+
+```bash
+helm install monitoring prometheus-community/kube-prometheus-stack -n gophprofile -f monitoring-values.yaml
+```
+
 Собрать образ приложения и воркера
 
 ```bash
