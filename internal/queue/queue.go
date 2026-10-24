@@ -108,6 +108,10 @@ func (q *Queue) GetProcessConsumer() <-chan amqp.Delivery {
 	return q.processConsumer
 }
 
+func (q *Queue) IsConnected() bool {
+	return q.conn != nil && !q.conn.IsClosed()
+}
+
 func (q *Queue) SendUploadEvent(ctx context.Context, e models.AvatarUploadEvent) error {
 	ch, err := q.CreateCh()
 	if err != nil {

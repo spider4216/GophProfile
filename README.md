@@ -74,5 +74,5 @@ k3d image import gophprofile:1.0 -c local
 Затем запустить установку через helm
 
 ```bash
-helm upgrade --install gophprofile . --namespace gophprofile --create-namespace
+helm upgrade --install gophprofile . --namespace gophprofile -f values-secret.yaml --create-namespace
 ```
