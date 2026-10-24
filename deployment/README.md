@@ -37,7 +37,6 @@ k3d image import gophprofile:1.0 -c local
 kubectl port-forward service/minio 9001:9001 -n gophprofile
 kubectl port-forward service/rabbitmq 15672:15672 -n gophprofile
 kubectl port-forward service/jaeger 16686:16686 -n gophprofile
-kubectl port-forward service/prometheus 9090:9090 -n gophprofile
 kubectl port-forward service/grafana 3000:3000 -n gophprofile
 kubectl port-forward -n gophprofile pod/prometheus-monitoring-kube-prometheus-prometheus-0 9090:9090
 ```

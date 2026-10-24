@@ -6,7 +6,6 @@ metadata:
     app: gophprofile-app
     version: '1.0'
 spec:
-  replicas: {{ .Values.app.replicas }}
   selector:
     matchLabels:
       app: gophprofile-app

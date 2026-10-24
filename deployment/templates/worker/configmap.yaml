@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: gophprofile
 data:
+  SERVER_ADDRESS: "0.0.0.0:{{ .Values.worker.containerPort }}"
   LOG_LEVEL: debug
   MINIO_HOST: http://minio:{{ .Values.minio.service.port.api }}
   OTEL_SERVICE_NAME: worker

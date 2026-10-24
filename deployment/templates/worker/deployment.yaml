@@ -42,6 +42,22 @@ spec:
             capabilities:
               drop:
                 - ALL
+          
+          livenessProbe:
+            httpGet:
+              path: "{{ .Values.worker.livenessProbe.httpGet.path }}"
+              port: {{ .Values.worker.livenessProbe.httpGet.port }}
+            periodSeconds: {{ .Values.worker.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.worker.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.worker.livenessProbe.failureThreshold }}
+          
+          readinessProbe:
+            httpGet:
+              path: "{{ .Values.worker.readinessProbe.httpGet.path }}"
+              port: {{ .Values.worker.readinessProbe.httpGet.port }}
+            periodSeconds: {{ .Values.worker.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.worker.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.worker.readinessProbe.failureThreshold }}
 
           envFrom:
             - configMapRef:
