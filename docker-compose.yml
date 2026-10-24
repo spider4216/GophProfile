@@ -70,7 +70,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./deployment/files/grafana/provisioning:/etc/grafana/provisioning
       - grafana-data:/var/lib/grafana
     depends_on:
       - loki
@@ -94,6 +94,7 @@ services:
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
       OTEL_EXPORTER_OTLP_COMPRESSION: gzip
       OTEL_EXPORTER_OTLP_INSECURE: true
+      SERVER_ADDRESS: 0.0.0.0:8081
     depends_on:
       postgres:
         condition: service_healthy

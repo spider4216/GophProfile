@@ -1,0 +1,181 @@
+postgres:
+  image:
+    repository: postgres
+    tag: "18"
+  replicas: 1
+  containerPort: 5432
+  service:
+    port: 5432
+  dbName: "gophprofile"
+
+app:
+  image:
+    repository: gophprofile
+    tag: "1.0"
+  command: ["/app/server"]
+  containerPort: 8080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 500m
+      memory: 128Mi
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+  
+  hpa:
+    minReplicas: 1
+    maxReplicas: 3
+    cpu:
+      averageUtilization: 70
+    memory:
+      averageUtilization: 80
+  
+  service:
+    port: 8080
+
+grafana:
+  image:
+    repository: grafana/grafana
+    tag: "12.3.1"
+  replicas: 1
+  containerPort: 3000
+  service:
+    port: 3000
+  pvc:
+    storage: "100Mi"
+
+jaeger:
+  image:
+    repository: jaegertracing/all-in-one
+    tag: "latest"
+  replicas: 1
+  ports:
+    containerPort: 16686
+    otlpGRPCPort: 4317
+    otlpHTTPPort: 4318
+  service:
+    servicePort: 16686
+    otlpGRPCPort: 4317
+
+loki:
+  image:
+    repository: grafana/loki
+    tag: "3.6.3"
+  replicas: 1
+  containerPort: 3100
+  pvc:
+    storage: "100Mi"
+  service:
+    servicePort: 3100
+
+minio:
+  image:
+    repository: cgr.dev/chainguard/minio
+    tag: "latest"
+  replicas: 1
+  command: ["minio"]
+  args: ["server", "/data", "--console-address", ":9001"]
+  ports:
+    api: 9000
+    web: 9001
+  pvc:
+    storage: "200Mi"
+  service:
+    port:
+      api: 9000
+      web: 9001
+
+node_exporter:
+  image:
+    repository: prom/node-exporter
+    tag: "latest"
+  replicas: 1
+  containerPort: 9100
+  service:
+    port: 9100
+
+otel_collector:
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.143.0"
+  replicas: 1
+  ports:
+    containerGRPCPort: 4317
+    containerHTTPPort: 4318
+    containerPrometheusPort: 8889
+    containerHealthPort: 13133
+  service:
+    ports:
+      grpcPort: 4317
+      httpPort: 4318
+      prometheusPort: 8889
+      healthPort: 13133
+
+prometheus:
+  image:
+    repository: prom/prometheus
+    tag: "latest"
+  replicas: 1
+  containerPort: 9090
+  service:
+    port: 9090
+
+rabbitmq:
+  image:
+    repository: rabbitmq
+    tag: "3.12-management"
+  replicas: 1
+  ports:
+    api: 5672
+    web: 15672
+  pvc:
+    storage: "100Mi"
+  service:
+    ports:
+      api: 5672
+      web: 15672
+
+shared:
+  storage: "100Mi"
+
+worker:
+  image:
+    repository: gophprofile
+    tag: "1.0"
+  replicas: 1
+  command: ["/app/worker"]
+  containerPort: 8081
+  livenessProbe:
+    httpGet:
+      path: /liveness
+      port: 8081
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /readiness
+      port: 8081
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+  service:
+    ports:
+      web: 8081

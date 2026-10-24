@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gophprofile-app
+  labels:
+    app: gophprofile-app
+    version: '1.0'
+spec:
+  selector:
+    matchLabels:
+      app: gophprofile-app
+      version: '1.0'      
+  template:
+    metadata:
+      labels:
+        app: gophprofile-app
+        version: '1.0'
+    
+    spec:
+      serviceAccountName: gophprofile
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+      - name: gophprofile-app
+        image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
+        imagePullPolicy: Never
+        command: {{ .Values.app.command }}
+        ports:
+        - containerPort: {{ .Values.app.containerPort }}
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+
+        resources:
+          requests:
+            cpu: "{{ .Values.app.resources.requests.cpu }}"
+            memory: "{{ .Values.app.resources.requests.memory }}"
+          limits:
+            cpu: "{{ .Values.app.resources.limits.cpu }}"
+            memory: "{{ .Values.app.resources.limits.memory }}"
+
+        livenessProbe:
+          httpGet:
+            path: "{{ .Values.app.livenessProbe.httpGet.path }}"
+            port: {{ .Values.app.livenessProbe.httpGet.port }}
+          periodSeconds: {{ .Values.app.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.app.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.app.livenessProbe.failureThreshold }}
+        
+        readinessProbe:
+          httpGet:
+            path: "{{ .Values.app.readinessProbe.httpGet.path }}"
+            port: {{ .Values.app.readinessProbe.httpGet.port }}
+          periodSeconds: {{ .Values.app.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.app.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.app.readinessProbe.failureThreshold }}
+
+        envFrom:
+          - configMapRef:
+              name: gophprofile-app
+          - secretRef:
+              name: gophprofile-app-secret
+        
+        volumeMounts:
+            - name: shared-tmp
+              mountPath: /tmp
+      
+      volumes:
+        - name: shared-tmp
+          persistentVolumeClaim:
+            claimName: shared-tmp

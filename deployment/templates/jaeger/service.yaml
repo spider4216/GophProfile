@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  labels:
+    app: jaeger
+    version: '1.0'
+spec:
+  # Тип сервиса
+  type: ClusterIP
+   
+  # Селектор. Выбирает Pods для маршрутизации трафика по их лейблам
+  selector:
+    app: jaeger
+
+  # Порты сервиса
+  ports:
+  - name: http
+    protocol: TCP
+    port: {{ .Values.jaeger.service.servicePort }}
+    targetPort: {{ .Values.jaeger.ports.containerPort }}
+  - name: otlp-grpc
+    protocol: TCP
+    port: {{ .Values.jaeger.service.otlpGRPCPort }}
+    targetPort: {{ .Values.jaeger.ports.otlpGRPCPort }}

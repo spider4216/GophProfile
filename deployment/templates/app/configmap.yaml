@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gophprofile-app
+data:
+  LOG_LEVEL: debug
+  SERVER_ADDRESS: "0.0.0.0:{{ .Values.app.containerPort }}"
+  MINIO_HOST: http://minio:{{ .Values.minio.service.port.api }}
+  OTEL_SERVICE_NAME: app
+  OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:{{ .Values.otel_collector.service.ports.grpcPort }}
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:{{ .Values.otel_collector.service.ports.httpPort }}/v1/metrics
+  OTEL_EXPORTER_OTLP_COMPRESSION: gzip
+  OTEL_EXPORTER_OTLP_INSECURE: "true"
+  ENABLE_HTTPS: "false"

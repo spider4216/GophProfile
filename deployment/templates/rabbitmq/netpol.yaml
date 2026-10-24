@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rabbitmq-netpol
+  namespace: gophprofile
+spec:
+  podSelector:
+    matchLabels:
+      app: rabbitmq
+
+  policyTypes:
+    - Ingress
+
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: gophprofile-app
+        - podSelector:
+            matchLabels:
+              app: gophprofile
+      ports:
+        - protocol: TCP
+          port: {{ .Values.rabbitmq.ports.api }}

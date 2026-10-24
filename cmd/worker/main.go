@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
+	"net/http"
+	"time"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/spider4216/GophProfile/internal/queue"
@@ -19,12 +22,34 @@ import (
 func main() {
 	app := newApp()
 
-	if err := app.Run(); err != nil {
+	if err := app.Init(); err != nil {
 		log.Fatal("Cannot run app", err)
 	}
 
 	service := services.NewService(app.logger, app.queue, app.repo, app.s3Client, app.tracer, app.meter)
 	handler := handlers.NewHandler(app.logger, service, app.cfg, app.tracer, app.meter)
+	srvHandler := handlers.NewSrvHandler(app.queue, app.logger)
+
+	mux := http.NewServeMux()
+
+	mux.Handle("GET /liveness", http.HandlerFunc(srvHandler.Liveness))
+	mux.Handle("GET /readiness", http.HandlerFunc(srvHandler.Readiness))
+
+	srv := &http.Server{
+		Addr:         app.cfg.ServerAddress,
+		Handler:      mux,
+		ReadTimeout:  app.cfg.ReadTimeout,
+		WriteTimeout: app.cfg.WriteTimeout,
+		IdleTimeout:  app.cfg.IdleTimeout,
+	}
+
+	go func() {
+		app.logger.Info("Run Liveness & Readiness probs in worker")
+
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			app.logger.Error("Server error", "error", err)
+		}
+	}()
 
 	defer app.ctxStop()
 
@@ -32,8 +57,8 @@ func main() {
 
 	app.runConsume(app.ctx, handler)
 
-	if err := app.shutdown(); err != nil {
-		app.logger.Warn("cannot shutdown correctly")
+	if err := app.shutdown(srv); err != nil {
+		app.logger.Warn("cannot shutdown correctly", "error", err)
 	}
 }
 
@@ -55,13 +80,25 @@ func (app *app) runConsume(ctx context.Context, handler *handlers.Handler) {
 	}
 }
 
-func (app *app) shutdown() error {
+func (app *app) shutdown(srv *http.Server) error {
+	// Контекст для завершения сервера
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		5*time.Second,
+	)
+
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		return fmt.Errorf("cannot shutdown server: %w", err)
+	}
+
 	app.logShutdown()
 	app.tracerShutdown()
 	app.meterShutdown()
 
 	if err := app.queue.ConnectClose(); err != nil {
-		return fmt.Errorf("cannot close queue connection")
+		return fmt.Errorf("cannot close queue connection: %w", err)
 	}
 
 	return nil

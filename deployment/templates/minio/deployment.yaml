@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  labels:
+    app: minio
+    version: '1.0'
+spec:
+  replicas: {{ .Values.minio.replicas }}
+  selector:
+    matchLabels:
+      app: minio
+      version: '1.0'      
+  template:
+    metadata:
+      labels:
+        app: minio
+        version: '1.0'
+    spec:
+      containers:
+      - name: minio
+        image: "{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        command: {{- toYaml .Values.minio.command | nindent 12 }}
+        args: {{- toYaml .Values.minio.args | nindent 12 }}
+        ports:
+          - name: api
+            containerPort: {{ .Values.minio.ports.api }}
+          - name: web
+            containerPort: {{ .Values.minio.ports.web }}
+        envFrom:
+          - secretRef:
+              name: minio-secret
+        volumeMounts:
+            - name: minio-data
+              mountPath: /data
+      volumes:
+        - name: minio-data
+          persistentVolumeClaim:
+            claimName: minio-pvc 

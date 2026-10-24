@@ -1,14 +1,19 @@
+// @title           GophProfile API
+// @version         1.0
+// @description     API сервиса управления аватарками пользователей.
+// @BasePath        /api/v1
 package main
 
 import (
 	"context"
 	"errors"
 	"log"
+	"log/slog"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
+	"github.com/spider4216/GophProfile/internal/config"
 	"github.com/spider4216/GophProfile/internal/server/handlers"
 	"github.com/spider4216/GophProfile/internal/server/middlewares"
 	"github.com/spider4216/GophProfile/internal/services"
@@ -80,10 +85,20 @@ func main() {
 
 	app.logger.Debug("Listen server", "address", app.cfg.ServerAddress)
 
-	if err := srv.ListenAndServeTLS(app.cfg.CrtPath, app.cfg.PKPath); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := runServer(srv, app.cfg, app.logger); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		app.logger.Error("Server error", "error", err)
-		os.Exit(1)
+		app.ctxStop()
 	}
 
 	wg.Wait()
+}
+
+func runServer(srv *http.Server, cfg *config.Config, logger *slog.Logger) error {
+	if cfg.Https {
+		logger.Info("Run HTTPS mode")
+		return srv.ListenAndServeTLS(cfg.CrtPath, cfg.PKPath)
+	}
+
+	logger.Info("Run HTTP mode")
+	return srv.ListenAndServe()
 }

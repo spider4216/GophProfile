@@ -1,0 +1,291 @@
+basePath: /api/v1
+definitions:
+  enum.UploadStatus:
+    enum:
+    - uploading
+    - uploaded
+    type: string
+    x-enum-varnames:
+    - Uploading
+    - Uploaded
+  models.ForbiddenResp:
+    properties:
+      details:
+        type: string
+      error:
+        type: string
+    type: object
+  models.GetMetaResp:
+    properties:
+      created_at:
+        type: string
+      file_name:
+        type: string
+      id:
+        type: string
+      mime_type:
+        type: string
+      size:
+        type: integer
+      thumbnails:
+        items:
+          $ref: '#/definitions/models.Thumbnail'
+        type: array
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.GetNoAvaResp:
+    properties:
+      error:
+        type: string
+    type: object
+  models.Thumbnail:
+    properties:
+      size:
+        type: string
+      url:
+        type: string
+    type: object
+  models.UploadResp:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/enum.UploadStatus'
+      url:
+        type: string
+      user_id:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API сервиса управления аватарками пользователей.
+  title: GophProfile API
+  version: "1.0"
+paths:
+  /avatars:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает изображение аватара пользователя. Файл временно сохраняется
+        на сервере, после чего создаётся запись об аватаре и отправляется событие
+        на загрузку в MinIO.
+      parameters:
+      - description: Идентификатор пользователя
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Файл изображения аватара
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Аватар создан, загрузка в процессе
+          schema:
+            $ref: '#/definitions/models.UploadResp'
+        "400":
+          description: Не передан файл или неподдерживаемый формат изображения
+        "413":
+          description: Размер файла превышает допустимый
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Загрузить аватар
+      tags:
+      - Avatars
+  /avatars/{avatar_id}:
+    get:
+      description: Возвращает изображение аватара или его миниатюру. Размер миниатюры
+        задаётся параметром size.
+      parameters:
+      - description: UUID аватара
+        in: path
+        name: avatar_id
+        required: true
+        type: string
+      - description: Размер миниатюры, например 100x100
+        in: query
+        name: size
+        type: string
+      produces:
+      - image/*
+      responses:
+        "200":
+          description: Файл изображения
+          headers:
+            Cache-Control:
+              description: Параметры кеширования
+              type: string
+            Content-Disposition:
+              description: Имя файла
+              type: string
+            ETag:
+              description: Хеш содержимого
+              type: string
+          schema:
+            type: file
+        "404":
+          description: Аватар не найден
+          schema:
+            $ref: '#/definitions/models.GetNoAvaResp'
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Получить аватар
+      tags:
+      - Avatars
+  /avatars/{avatar_id}/metadata:
+    get:
+      description: Возвращает метаданные аватара по его идентификатору.
+      parameters:
+      - description: UUID аватара
+        in: path
+        name: avatar_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Метаданные аватара
+          schema:
+            $ref: '#/definitions/models.GetMetaResp'
+        "404":
+          description: Аватар не найден
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Получить метаданные аватара
+      tags:
+      - Avatars
+  /avatars/{id}:
+    delete:
+      description: Запускает удаление аватара пользователя через отправку события
+        в брокер сообщений. Удалять можно только собственный аватар.
+      parameters:
+      - description: UUID аватара
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Идентификатор пользователя
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Аватар успешно помечен для удаления
+        "403":
+          description: Пользователь не является владельцем аватара
+          schema:
+            $ref: '#/definitions/models.ForbiddenResp'
+        "404":
+          description: Аватар не найден
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Удалить аватар
+      tags:
+      - Avatars
+  /users/{user_id}/avatar:
+    delete:
+      description: Запускает асинхронное удаление всех аватаров указанного пользователя
+        через отправку событий в брокер сообщений. Удалять аватары можно только от
+        имени их владельца.
+      parameters:
+      - description: Идентификатор пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Идентификатор текущего пользователя
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: События удаления успешно отправлены
+        "403":
+          description: Текущий пользователь не является владельцем всех аватаров
+          schema:
+            $ref: '#/definitions/models.ForbiddenResp'
+        "404":
+          description: У пользователя нет аватаров
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Удалить все аватары пользователя
+      tags:
+      - Users
+      - Avatars
+    get:
+      description: Возвращает последнее активное изображение пользователя или его
+        миниатюру.
+      parameters:
+      - description: Идентификатор пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Размер миниатюры, например 100x100
+        in: query
+        name: size
+        type: string
+      produces:
+      - image/*
+      responses:
+        "200":
+          description: Файл изображения
+          headers:
+            Cache-Control:
+              description: Параметры кеширования
+              type: string
+            Content-Disposition:
+              description: Имя файла
+              type: string
+            ETag:
+              description: Хеш содержимого
+              type: string
+          schema:
+            type: file
+        "404":
+          description: Аватар пользователя не найден
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Получить аватар пользователя
+      tags:
+      - Users
+      - Avatars
+  /users/{user_id}/avatars:
+    get:
+      description: Возвращает список метаданных всех аватаров указанного пользователя.
+      parameters:
+      - description: Идентификатор пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список метаданных аватаров
+          schema:
+            items:
+              $ref: '#/definitions/models.GetMetaResp'
+            type: array
+        "404":
+          description: У пользователя нет аватаров
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Получить все аватары пользователя
+      tags:
+      - Users
+      - Avatars
+swagger: "2.0"
