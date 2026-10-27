@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  labels:
+    app: otel-collector
+    version: '1.0'
+spec:
+  replicas: {{ .Values.otel_collector.replicas }}
+  selector:
+    matchLabels:
+      app: otel-collector
+      version: '1.0'      
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+        version: '1.0'
+    spec:
+      containers:
+      - name: otel-collector
+        image: "{{ .Values.otel_collector.image.repository }}:{{ .Values.otel_collector.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        args:
+          - "--config=/etc/otel-collector-config.yml"
+        ports:
+          - name: grpc-port
+            containerPort: {{ .Values.otel_collector.ports.containerGRPCPort }}
+          - name: http-port
+            containerPort: {{ .Values.otel_collector.ports.containerHTTPPort }}
+          - name: prometheus-port
+            containerPort: {{ .Values.otel_collector.ports.containerPrometheusPort }}
+          - name: health-port
+            containerPort: {{ .Values.otel_collector.ports.containerHealthPort }}
+        volumeMounts:
+            - name: otel-collector-config
+              mountPath: /etc/otel-collector-config.yml
+              subPath: otel-collector-config.yml
+      volumes:
+        - name: otel-collector-config
+          configMap:
+            name: otel-collector

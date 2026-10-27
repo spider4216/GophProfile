@@ -4,7 +4,7 @@ datasources:
   - name: Loki
     type: loki
     access: proxy
-    url: http://loki:3100
+    url: http://loki:{{ .Values.loki.service.servicePort }}
     isDefault: true
     editable: true
     jsonData:
@@ -12,12 +12,12 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://prometheus:9090 # API прометеуса
+    url: http://monitoring-kube-prometheus-prometheus:{{ .Values.prometheus.service.port }}
     isDefault: false
     editable: true
   - name: Jaeger
     type: jaeger
     access: proxy
-    url: http://jaeger:16686 # API Jaeger
+    url: http://jaeger:{{ .Values.jaeger.service.servicePort }}
     isDefault: false
     editable: true

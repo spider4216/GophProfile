@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  labels:
+    app: otel-collector
+    version: '1.0'
+spec:
+  # Тип сервиса
+  type: ClusterIP
+   
+  # Селектор. Выбирает Pods для маршрутизации трафика по их лейблам
+  selector:
+    app: otel-collector
+
+  # Порты сервиса
+  ports:
+  - name: grpc-port
+    port: {{ .Values.otel_collector.service.ports.grpcPort }}
+    targetPort: {{ .Values.otel_collector.ports.containerGRPCPort }}
+  - name: http-port
+    port: {{ .Values.otel_collector.service.ports.httpPort }}       
+    targetPort: {{ .Values.otel_collector.ports.containerHTTPPort }}
+  - name: prometheus-port
+    port: {{ .Values.otel_collector.service.ports.prometheusPort }}       
+    targetPort: {{ .Values.otel_collector.ports.containerPrometheusPort }}
+  - name: health-port
+    port: {{ .Values.otel_collector.service.ports.healthPort }}       
+    targetPort: {{ .Values.otel_collector.ports.containerHealthPort }}

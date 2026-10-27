@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jaeger-netpol
+  namespace: gophprofile
+spec:
+  podSelector:
+    matchLabels:
+      app: jaeger
+
+  policyTypes:
+    - Ingress
+
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: otel-collector
+      ports:
+        - protocol: TCP
+          port: {{ .Values.jaeger.ports.otlpGRPCPort }}
+        - protocol: TCP
+          port: {{ .Values.jaeger.ports.otlpHTTPPort }}
+    - from:
+      - podSelector:
+          matchLabels:
+            app: grafana
+      ports:
+        - protocol: TCP
+          port: {{ .Values.jaeger.ports.containerPort }}

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  labels:
+    app: rabbitmq
+    version: '1.0'
+spec:
+  replicas: {{ .Values.rabbitmq.replicas }}
+  selector:
+    matchLabels:
+      app: rabbitmq
+      version: '1.0'      
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+        version: '1.0'
+    spec:
+      containers:
+      - name: rabbitmq
+        image: "{{ .Values.rabbitmq.image.repository }}:{{ .Values.rabbitmq.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: api
+            containerPort: {{ .Values.rabbitmq.ports.api }}
+          - name: web
+            containerPort: {{ .Values.rabbitmq.ports.web }}
+        envFrom:
+          - configMapRef:
+              name: rabbitmq
+        volumeMounts:
+            - name: rabbitmq-data
+              mountPath: /var/lib/rabbitmq
+      volumes:
+        - name: rabbitmq-data
+          persistentVolumeClaim:
+            claimName: rabbitmq-pvc

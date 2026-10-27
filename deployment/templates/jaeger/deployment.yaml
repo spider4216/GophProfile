@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  labels:
+    app: jaeger
+    version: '1.0'
+spec:
+  replicas: {{ .Values.jaeger.replicas }}
+  selector:
+    matchLabels:
+      app: jaeger
+      version: '1.0'
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        version: '1.0'
+    spec:
+      containers:
+      - name: jaeger
+        image: "{{ .Values.jaeger.image.repository }}:{{ .Values.jaeger.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: {{ .Values.jaeger.ports.containerPort }}
+        - name: otlp-grpc
+          containerPort: {{ .Values.jaeger.ports.otlpGRPCPort }}
+        - name: otlp-http
+          containerPort: {{ .Values.jaeger.ports.otlpHTTPPort }}

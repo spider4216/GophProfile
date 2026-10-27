@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+    version: '1.0'
+spec:
+  # Тип сервиса
+  type: ClusterIP
+   
+  # Селектор. Выбирает Pods для маршрутизации трафика по их лейблам
+  selector:
+    app: grafana
+
+  # Порты сервиса
+  ports:
+  - name: http
+    protocol: TCP
+    port: {{ .Values.grafana.service.port }}
+    targetPort: {{ .Values.grafana.containerPort }}

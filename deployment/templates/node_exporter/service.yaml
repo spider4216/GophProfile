@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-exporter
+  labels:
+    app: node-exporter
+    version: '1.0'
+spec:
+  # Тип сервиса
+  type: ClusterIP
+   
+  # Селектор. Выбирает Pods для маршрутизации трафика по их лейблам
+  selector:
+    app: node-exporter
+
+  # Порты сервиса
+  ports:
+  - name: metrics
+    protocol: TCP
+    port: {{ .Values.node_exporter.service.port }}
+    targetPort: {{ .Values.node_exporter.containerPort }}

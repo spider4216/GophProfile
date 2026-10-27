@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki
+  labels:
+    app: loki
+    version: '1.0'
+spec:
+  # Тип сервиса
+  type: ClusterIP
+   
+  # Селектор. Выбирает Pods для маршрутизации трафика по их лейблам
+  selector:
+    app: loki
+
+  # Порты сервиса
+  ports:
+  - name: loki-port
+    protocol: TCP
+    port: {{ .Values.loki.service.servicePort }}
+    targetPort: {{ .Values.loki.containerPort }}

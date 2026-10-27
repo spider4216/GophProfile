@@ -38,7 +38,7 @@ func newApp() *app {
 	return &app{}
 }
 
-func (a *app) Run() error {
+func (a *app) Init() error {
 	_, err := config.NewBuilder(a).
 		Step((*app).initCtx).
 		Step((*app).initConfig).

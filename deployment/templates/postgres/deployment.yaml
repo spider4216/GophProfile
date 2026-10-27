@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+    version: '1.0'
+spec:
+  replicas: {{ .Values.postgres.replicas }}
+  selector:
+    matchLabels:
+      app: postgres
+      version: '1.0'      
+  template:
+    metadata:
+      labels:
+        app: postgres
+        version: '1.0'
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: {{ .Values.postgres.containerPort }}
+        envFrom:
+          - configMapRef:
+              name: postgres
+          - secretRef:
+              name: postgres-secret

@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gophprofile-netpol
+  namespace: gophprofile
+spec:
+  podSelector:
+    matchLabels:
+      app: gophprofile
+
+  policyTypes:
+    - Ingress
+
+  ingress: [] # Закрываем входящий трафик, он тут не нужен
